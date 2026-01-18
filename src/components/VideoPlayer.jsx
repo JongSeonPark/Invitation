@@ -21,7 +21,7 @@ const VideoPlayer = () => {
 const styles = {
     section: {
         padding: '4rem 1.5rem',
-        backgroundColor: '#FAFAFA',
+        backgroundColor: '#fff',
         textAlign: 'center',
     },
     title: {

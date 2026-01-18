@@ -21,7 +21,7 @@ const Info = () => {
 const styles = {
     section: {
         padding: '3rem 1.5rem',
-        backgroundColor: 'var(--color-bg)',
+        backgroundColor: '#fff',
     },
     container: {
         backgroundColor: '#fff',

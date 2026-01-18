@@ -50,7 +50,7 @@ const styles = {
         justifyContent: 'center',
         alignItems: 'center',
         textAlign: 'center',
-        backgroundColor: '#F9F7F5', // Fallback
+        backgroundColor: '#fff', // Unified White Theme
         background: 'linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url(https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',

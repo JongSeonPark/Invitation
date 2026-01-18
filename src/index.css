@@ -1,10 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Serif+KR:wght@300;400;700&display=swap');
 
 :root {
-  --color-primary: #8E7F7F; /* Soft warm gray/brown */
+  --color-primary: #8E7F7F;
+  /* Soft warm gray/brown */
   --color-secondary: #D4C4C4;
   --color-accent: #E8D5C8;
-  --color-bg: #F9F7F5; /* Rice paper color */
+  --color-bg: #F9F7F5;
+  /* PC Background (Beige) */
+  /* Unified White Theme */
   --color-text: #2C2C2C;
   --font-serif: 'Noto Serif KR', serif;
   --font-sans: 'Gowun Dodum', sans-serif;
@@ -20,20 +23,35 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-bg);
   color: var(--color-text);
-  line-height: 1.6;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Mobile Tap Highlight Fix */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   min-height: 100vh;
 }
 
 #root {
-  max-width: 480px; /* Mobile width constraint */
+  max-width: 480px;
+  /* Mobile width constraint */
   margin: 0 auto;
   background-color: #fff;
   min-height: 100vh;
-  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-serif);
   font-weight: 700;
   margin-bottom: 0.5em;
