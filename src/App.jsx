@@ -5,6 +5,7 @@ import Gallery from './components/Gallery';
 import VideoPlayer from './components/VideoPlayer';
 import Location from './components/Location';
 import DinoGame from './components/DinoGame';
+import MusicPlayer from './components/MusicPlayer';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Gallery />
       <VideoPlayer />
       <DinoGame />
+      <MusicPlayer />
       <Location />
     </div>
   )

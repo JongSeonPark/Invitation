@@ -15,12 +15,14 @@ const Location = () => {
             <h2 style={styles.title}>LOCATION</h2>
             <div style={styles.mapContainer}>
                 <iframe
-                    src="https://map.naver.com/p/entry/place/1203677675?c=15.00,0,0,0,dh"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3167.319503923361!2d126.8378553151658!3d37.31155397984408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357b6f2f2b2b2b2b%3A0x2b2b2b2b2b2b2b2b!2z67mM652865TnIOyngOuSpCDyHZU!5e0!3m2!1sko!2skr!4v1620000000000!5m2!1sko!2skr"
                     width="100%"
                     height="400"
                     style={styles.iframe}
                     frameBorder="0"
-                    title="Naver Map"
+                    title="Google Map"
+                    loading="lazy"
+                    allowFullScreen
                 ></iframe>
             </div>
 

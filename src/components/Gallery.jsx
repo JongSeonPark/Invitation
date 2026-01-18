@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Vite의 기능을 이용해 images 폴더의 모든 jpg/png 파일을 자동으로 가져옵니다.
 const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
@@ -6,16 +6,30 @@ const images = Object.values(imageModules).map(module => module.default);
 
 const Gallery = () => {
     const [selectedImage, setSelectedImage] = useState(null);
+    const scrollRef = useRef(null);
 
     // 이미지가 없을 경우를 대비한 방어 코드
     if (images.length === 0) {
         return null;
     }
 
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (el) {
+            const onWheel = (e) => {
+                if (e.deltaY === 0) return;
+                e.preventDefault();
+                el.scrollLeft += e.deltaY;
+            };
+            el.addEventListener('wheel', onWheel);
+            return () => el.removeEventListener('wheel', onWheel);
+        }
+    }, []);
+
     return (
         <section id="gallery" style={styles.section}>
             <h2 style={styles.title}>GALLERY</h2>
-            <div style={styles.scrollContainer}>
+            <div ref={scrollRef} style={styles.scrollContainer}>
                 {images.map((src, index) => (
                     <div key={index} style={styles.imageWrapper} onClick={() => setSelectedImage(src)}>
                         <img src={src} alt={`Gallery ${index + 1}`} style={styles.image} />
