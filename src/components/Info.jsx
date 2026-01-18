@@ -4,14 +4,14 @@ const Info = () => {
             <div style={styles.container}>
                 <div style={styles.item}>
                     <h3 style={styles.label}>DATE</h3>
-                    <p style={styles.value}>2026. 05. 24</p>
-                    <p style={styles.subValue}>SATURDAY 12:00 PM</p>
+                    <p style={styles.value}>2026. 04. 25</p>
+                    <p style={styles.subValue}>SATURDAY 04:50 PM</p>
                 </div>
                 <div style={styles.divider}></div>
                 <div style={styles.item}>
                     <h3 style={styles.label}>LOCATION</h3>
-                    <p style={styles.value}>웨딩홀 이름</p>
-                    <p style={styles.subValue}>서울시 강남구 테헤란로 123</p>
+                    <p style={styles.value}>빌라드 지디 안산</p>
+                    <p style={styles.subValue}>경기 안산시 단원구 광덕4로 140</p>
                 </div>
             </div>
         </section>

@@ -15,9 +15,9 @@ const Hero = () => {
                 <h1 style={styles.title}>
                     JongSeon
                     <span style={styles.ampersand}>&</span>
-                    Bride
+                    Jisu
                 </h1>
-                <p style={styles.date}>2026. 05. 24. SAT</p>
+                <p style={styles.date}>2026. 04. 25. SAT</p>
             </div>
             <div style={styles.scrollIndicator}>
                 <span>Scroll Down</span>

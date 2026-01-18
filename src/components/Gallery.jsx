@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const images = [
-    'https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&w=800&q=80',
-    'https://images.unsplash.com/photo-1511285560982-1351cdeb9821?ixlib=rb-4.0.3&w=800&q=80',
-    'https://images.unsplash.com/photo-1513278974837-77b3b426638b?ixlib=rb-4.0.3&w=800&q=80',
-    'https://images.unsplash.com/photo-1522673607200-1645062cd495?ixlib=rb-4.0.3&w=800&q=80',
-    'https://images.unsplash.com/photo-1529636721637-2b8745a68d71?ixlib=rb-4.0.3&w=800&q=80'
-];
+// Vite의 기능을 이용해 images 폴더의 모든 jpg/png 파일을 자동으로 가져옵니다.
+const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
+const images = Object.values(imageModules).map(module => module.default);
 
 const Gallery = () => {
     const [selectedImage, setSelectedImage] = useState(null);
+
+    // 이미지가 없을 경우를 대비한 방어 코드
+    if (images.length === 0) {
+        return null;
+    }
 
     return (
         <section id="gallery" style={styles.section}>

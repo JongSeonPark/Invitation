@@ -6,7 +6,7 @@ const VideoPlayer = () => {
                 <iframe
                     width="100%"
                     height="100%"
-                    src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=7T0Z0G0Z0G0Z0G0Z"
+                    src="https://www.youtube.com/embed/2Vv-BfVoq4g"
                     title="Wedding Video"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
