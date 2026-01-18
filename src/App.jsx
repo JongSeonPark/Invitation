@@ -1,41 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Version1 from './pages/Version1';
 import Version2 from './pages/Version2';
+import SelectionPage from './pages/SelectionPage';
 
 function App() {
-  // Check URL for ?mode=classic
-  const getInitialVersion = () => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('mode') === 'classic' ? 1 : 2;
-  };
+  const [view, setView] = useState('selection'); // 'selection', 'v1', 'v2'
 
-  const [version, setVersion] = useState(getInitialVersion);
-
-  const handleVersionChange = (newVersion) => {
-    setVersion(newVersion);
-    // Optional: Update URL without reloading
-    const newUrl = new URL(window.location);
-    if (newVersion === 1) {
-      newUrl.searchParams.set('mode', 'classic');
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes('classic.html')) {
+      setView('v1');
+    } else if (path.includes('game.html')) {
+      // Explicitly check for game mode query param as fallback/legacy
+      // or just rely on the html file
+      setView('v2');
+    } else if (new URLSearchParams(window.location.search).get('mode') === 'classic') {
+      // Legacy support
+      setView('v1');
+    } else if (new URLSearchParams(window.location.search).get('mode') === 'game') {
+      setView('v2');
     } else {
-      newUrl.searchParams.delete('mode');
+      setView('selection');
     }
-    window.history.pushState({}, '', newUrl);
-  };
+  }, []);
 
   return (
     <>
-      {version === 1 ? (
-        <Version1 />
-      ) : (
-        <Version2 onSwitchToV1={() => handleVersionChange(1)} />
-      )}
-
-      {/* Dev Toggle Button */}
-      <div style={{ position: 'fixed', bottom: '10px', left: '10px', zIndex: 9999, opacity: 0.3 }}>
-        <button onClick={() => handleVersionChange(1)} style={{ marginRight: '5px' }}>V1</button>
-        <button onClick={() => handleVersionChange(2)}>V2</button>
-      </div>
+      {view === 'selection' && <SelectionPage />}
+      {view === 'v1' && <Version1 />}
+      {view === 'v2' && <Version2 onSwitchToV1={() => window.location.href = 'classic.html'} />}
     </>
   )
 }

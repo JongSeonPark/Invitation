@@ -5,4 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/Invitation/', // Repository name
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        classic: 'classic.html',
+        game: 'game.html',
+      },
+    },
+  },
 })
