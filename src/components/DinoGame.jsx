@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import groomPixel from '../assets/sprites/groom_pixel.png'; // Make sure these exist
+import groomPixel from '../assets/sprites/groom_pixel.png';
 import bridePixel from '../assets/sprites/bride_pixel.png';
+import { auth, db } from '../firebase';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { checkAchievement } from '../utils/achievementManager';
 
 const DinoGame = () => {
     const canvasRef = useRef(null);
     const [gameState, setGameState] = useState('START'); // START, PLAYING, GAME_OVER
     const [score, setScore] = useState(0);
-    const [character, setCharacter] = useState('groom'); // 'groom' or 'bride'
+    const [character, setCharacter] = useState('groom');
+    const [savedHighScore, setSavedHighScore] = useState(0); // For display feedback
 
     // Load Images
     const groomImg = useRef(new Image());
@@ -19,12 +23,48 @@ const DinoGame = () => {
 
     // Game State Ref
     const gameData = useRef({
-        dino: { x: 50, y: 150, w: 40, h: 40, dy: 0, grounded: true }, // Increased size slightly
+        dino: { x: 50, y: 150, w: 40, h: 40, dy: 0, grounded: true },
         obstacles: [],
         frame: 0,
         isGameOver: false,
         animationId: null
     });
+
+    // Save Score Logic
+    const saveScore = async (finalScore) => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        try {
+            const scoreRef = doc(db, "scores", user.uid);
+            const scoreSnap = await getDoc(scoreRef);
+
+            let shouldUpdate = true;
+            if (scoreSnap.exists()) {
+                const prevData = scoreSnap.data();
+                if (prevData.score >= finalScore) {
+                    shouldUpdate = false;
+                    setSavedHighScore(prevData.score);
+                } else {
+                    setSavedHighScore(finalScore);
+                }
+            } else {
+                setSavedHighScore(finalScore);
+            }
+
+            if (shouldUpdate) {
+                await setDoc(scoreRef, {
+                    uid: user.uid,
+                    displayName: user.displayName || 'Anonymous',
+                    score: finalScore,
+                    timestamp: serverTimestamp()
+                });
+                console.log("New High Score Saved!");
+            }
+        } catch (error) {
+            console.error("Error saving score:", error);
+        }
+    };
 
     const resetGame = () => {
         gameData.current = {
@@ -101,6 +141,9 @@ const DinoGame = () => {
             if (collided) {
                 setGameState('GAME_OVER');
                 data.isGameOver = true;
+                const finalScore = Math.floor(data.frame / 5);
+                saveScore(finalScore);
+                checkAchievement('GAME_SCORE', finalScore);
             }
 
             draw(ctx, canvas, data);
@@ -118,7 +161,7 @@ const DinoGame = () => {
         }
 
         return () => cancelAnimationFrame(gameData.current.animationId);
-    }, [gameState, character]); // Re-run when character changes
+    }, [gameState, character]);
 
     const draw = (ctx, canvas, data) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -157,6 +200,7 @@ const DinoGame = () => {
         if (gameState === 'START' || gameState === 'GAME_OVER') {
             resetGame();
             setGameState('PLAYING');
+            checkAchievement('GAME_START');
         } else {
             jump();
         }
@@ -188,7 +232,9 @@ const DinoGame = () => {
                 {gameState === 'GAME_OVER' && (
                     <div style={styles.overlay}>
                         <p>GAME OVER</p>
-                        <p style={{ fontSize: '0.8rem' }}>Tap to Retry</p>
+                        <p style={{ fontSize: '0.8rem' }}>Score: {score}</p>
+                        <p style={{ fontSize: '0.7rem', color: '#666' }}>High: {savedHighScore > score ? savedHighScore : score}</p>
+                        <p style={{ fontSize: '0.8rem', marginTop: '5px' }}>Tap to Retry</p>
                     </div>
                 )}
                 <div style={styles.score}>Score: {score}</div>
@@ -229,12 +275,13 @@ const styles = {
         left: '50%',
         transform: 'translate(-50%, -50%)',
         textAlign: 'center',
-        background: 'rgba(255,255,255,0.9)',
-        padding: '1rem',
+        background: 'rgba(255,255,255,0.95)',
+        padding: '1.5rem',
         borderRadius: '8px',
         fontWeight: 'bold',
         color: '#333',
-        minWidth: '200px',
+        minWidth: '220px',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
     },
     score: {
         marginTop: '0.5rem',
@@ -243,12 +290,13 @@ const styles = {
     },
     charBtn: {
         marginTop: '10px',
-        padding: '5px 10px',
+        padding: '8px 12px',
         backgroundColor: '#f0f0f0',
         border: '1px solid #ccc',
         borderRadius: '4px',
         cursor: 'pointer',
         fontSize: '0.8rem',
+        transition: 'all 0.2s',
     }
 }
 

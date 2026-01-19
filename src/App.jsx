@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Version1 from './pages/Version1';
 import Version2 from './pages/Version2';
 import SelectionPage from './pages/SelectionPage';
+import GlobalToast from './components/GlobalToast';
 
 function App() {
   const [view, setView] = useState('selection'); // 'selection', 'v1', 'v2'
@@ -29,6 +30,7 @@ function App() {
       {view === 'selection' && <SelectionPage />}
       {view === 'v1' && <Version1 />}
       {view === 'v2' && <Version2 onSwitchToV1={() => window.location.href = 'classic.html'} />}
+      <GlobalToast />
     </>
   )
 }

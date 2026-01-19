@@ -12,13 +12,16 @@ import DinoGame from '../DinoGame';
 import Recruit from './Recruit';
 import StoryMode from './StoryMode';
 import { audioManager } from '../../utils/audioManager';
+import { checkAchievement } from '../../utils/achievementManager';
+import RankingBoard from '../RankingBoard';
 
 const LobbyScreen = ({ onSwitchToV1 }) => {
     const [character, setCharacter] = useState('bride'); // 'groom' or 'bride'
     const [showBubble, setShowBubble] = useState(false);
     const [bubbleText, setBubbleText] = useState('');
-    const [activeModal, setActiveModal] = useState(null); // 'map', 'gallery', 'story', 'msg', 'game'
+    const [activeModal, setActiveModal] = useState(null); // 'map', 'gallery', 'story', 'msg', 'game', 'ranking'
     const [dDay, setDDay] = useState('');
+    const [touchCount, setTouchCount] = useState(0);
 
     useEffect(() => {
         const targetDate = new Date('2026-04-25T16:50:00');
@@ -58,6 +61,13 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
         const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
         setBubbleText(randomQuote);
         setShowBubble(true);
+
+        // Achievement Check
+        setTouchCount(prev => {
+            const newCount = prev + 1;
+            checkAchievement('TOUCH_CHARACTER', newCount);
+            return newCount;
+        });
 
         // Hide bubble after 3 seconds
         setTimeout(() => setShowBubble(false), 3000);
@@ -129,6 +139,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                     <MenuButton icon="📷" label="갤러리" onClick={() => toggleModal('gallery')} />
                     <MenuButton icon="💎" label="뽑기" onClick={() => toggleModal('recruit')} />
                     <MenuButton icon="📜" label="스토리" onClick={() => toggleModal('story')} />
+                    <MenuButton icon="🏆" label="랭킹" onClick={() => toggleModal('ranking')} />
                     <MenuButton icon="✉️" label="정보" onClick={() => toggleModal('info')} />
                     <MenuButton icon="🔙" label="구버전" onClick={handleSwitchToV1} />
                 </div>
@@ -179,6 +190,13 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                 <GameModal title="사진 뽑기 (GACHA)" onClose={closeModal}>
                     <div style={{ height: '500px' }}>
                         <Recruit />
+                    </div>
+                </GameModal>
+            )}
+            {activeModal === 'ranking' && (
+                <GameModal title="명예의 전당 (RANKING)" onClose={closeModal}>
+                    <div style={{ background: '#fff' }}>
+                        <RankingBoard />
                     </div>
                 </GameModal>
             )}
