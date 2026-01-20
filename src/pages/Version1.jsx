@@ -14,7 +14,7 @@ const Version1 = () => {
             <Hero />
             <InvitationText />
             <Info />
-            <Gallery />
+            <Gallery forceUnlock={true} />
             <VideoPlayer />
             <DinoGame />
             <CoupleCards />

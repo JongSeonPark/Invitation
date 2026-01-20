@@ -1,24 +1,64 @@
 import { useEffect, useRef, useState } from 'react';
 import groomPixel from '../assets/sprites/groom_pixel.png';
 import bridePixel from '../assets/sprites/bride_pixel.png';
+import groomRun1 from '../assets/sprites/groom_run1.png';
+import groomRun2 from '../assets/sprites/groom_run2.png';
+import brideRun1 from '../assets/sprites/bride_run1.png';
+import brideRun2 from '../assets/sprites/bride_run2.png';
 import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { checkAchievement } from '../utils/achievementManager';
 
-const DinoGame = () => {
+const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const canvasRef = useRef(null);
     const [gameState, setGameState] = useState('START'); // START, PLAYING, GAME_OVER
     const [score, setScore] = useState(0);
-    const [character, setCharacter] = useState('groom');
+    const [character, setCharacter] = useState(selectedCharacter);
     const [savedHighScore, setSavedHighScore] = useState(0); // For display feedback
+    const [imagesLoaded, setImagesLoaded] = useState(false);
+
+    // Sync character if prop changes
+    useEffect(() => {
+        setCharacter(selectedCharacter);
+    }, [selectedCharacter]);
 
     // Load Images
     const groomImg = useRef(new Image());
+    const groomRun1Img = useRef(new Image());
+    const groomRun2Img = useRef(new Image());
+
     const brideImg = useRef(new Image());
+    const brideRun1Img = useRef(new Image());
+    const brideRun2Img = useRef(new Image());
 
     useEffect(() => {
-        groomImg.current.src = groomPixel;
-        brideImg.current.src = bridePixel;
+        let loaded = 0;
+        const totalImages = 6;
+        const onPayload = () => {
+            loaded++;
+            if (loaded >= totalImages) setImagesLoaded(true);
+        };
+
+        const images = [
+            { ref: groomImg, src: groomPixel },
+            { ref: groomRun1Img, src: groomRun1 },
+            { ref: groomRun2Img, src: groomRun2 },
+            { ref: brideImg, src: bridePixel },
+            { ref: brideRun1Img, src: brideRun1 },
+            { ref: brideRun2Img, src: brideRun2 }
+        ];
+
+        images.forEach(img => {
+            img.ref.current.onload = onPayload;
+            img.ref.current.src = img.src;
+        });
+
+        // Fallback: Force load state after 1s in case onload misses
+        const timer = setTimeout(() => {
+            setImagesLoaded(true);
+            console.log("Force setting imagesLoaded via timeout");
+        }, 1000);
+        return () => clearTimeout(timer);
     }, []);
 
     // Game State Ref
@@ -81,13 +121,6 @@ const DinoGame = () => {
         if (gameData.current.dino.grounded) {
             gameData.current.dino.dy = -10;
             gameData.current.dino.grounded = false;
-        }
-    };
-
-    const toggleCharacter = (e) => {
-        if (gameState === 'START') {
-            e.stopPropagation();
-            setCharacter(prev => prev === 'groom' ? 'bride' : 'groom');
         }
     };
 
@@ -161,7 +194,23 @@ const DinoGame = () => {
         }
 
         return () => cancelAnimationFrame(gameData.current.animationId);
-    }, [gameState, character]);
+    }, [gameState, character, imagesLoaded]);
+
+    // Helper to get current sprite based on state
+    const getSprite = (data) => {
+        const isGroom = character === 'groom';
+        if (gameState !== 'PLAYING' || !data.dino.grounded) {
+            return isGroom ? groomImg.current : brideImg.current;
+        }
+
+        // Run animation (switch every 10 frames)
+        const runFrame = Math.floor(data.frame / 10) % 2;
+        if (isGroom) {
+            return runFrame === 0 ? groomRun1Img.current : groomRun2Img.current;
+        } else {
+            return runFrame === 0 ? brideRun1Img.current : brideRun2Img.current;
+        }
+    };
 
     const draw = (ctx, canvas, data) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -175,7 +224,8 @@ const DinoGame = () => {
         ctx.stroke();
 
         // Dino (Sprite)
-        const img = character === 'groom' ? groomImg.current : brideImg.current;
+        const img = getSprite(data);
+
         if (img && img.complete) {
             ctx.drawImage(img, data.dino.x, data.dino.y, data.dino.w, data.dino.h);
         } else {
@@ -192,10 +242,8 @@ const DinoGame = () => {
     };
 
     const handleAction = (e) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        // console.log("handleAction triggered", e?.type);
+        // Removing preventDefault/stopPropagation to fix interaction issues
 
         if (gameState === 'START' || gameState === 'GAME_OVER') {
             resetGame();
@@ -211,8 +259,7 @@ const DinoGame = () => {
             <h2 style={styles.title}>RUN TO WEDDING</h2>
             <div
                 style={styles.gameContainer}
-                onMouseDown={handleAction}
-                onTouchStart={handleAction}
+                onClick={handleAction}
             >
                 <canvas
                     ref={canvasRef}
@@ -223,10 +270,13 @@ const DinoGame = () => {
 
                 {gameState === 'START' && (
                     <div style={styles.overlay}>
-                        <p>TAP TO START</p>
-                        <button style={styles.charBtn} onClick={toggleCharacter} onMouseDown={(e) => e.stopPropagation()}>
-                            Character: {character === 'groom' ? '🤵' : '👰'} (Tap to Swap)
-                        </button>
+                        <p style={{ marginBottom: '10px' }}>TAP TO START</p>
+                        <button style={styles.startBtn} onClick={(e) => {
+                            e.stopPropagation();
+                            resetGame();
+                            setGameState('PLAYING');
+                            checkAchievement('GAME_START');
+                        }}>GAME START</button>
                     </div>
                 )}
                 {gameState === 'GAME_OVER' && (
@@ -284,9 +334,28 @@ const styles = {
         boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
     },
     score: {
-        marginTop: '0.5rem',
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
         fontFamily: 'monospace',
         fontSize: '1.2rem',
+        fontWeight: 'bold',
+        color: '#333',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        padding: '2px 5px',
+        borderRadius: '4px',
+        zIndex: 10,
+    },
+    startBtn: {
+        background: '#00eaff',
+        color: '#141824',
+        border: 'none',
+        padding: '10px 20px',
+        borderRadius: '4px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        fontSize: '1rem',
+        boxShadow: '0 0 10px rgba(0, 234, 255, 0.5)',
     },
     charBtn: {
         marginTop: '10px',

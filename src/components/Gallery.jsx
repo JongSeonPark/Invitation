@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
 const images = Object.values(imageModules).map(module => module.default);
 
-const Gallery = () => {
+const Gallery = ({ forceUnlock = false }) => {
     const [selectedImage, setSelectedImage] = useState(null);
     const scrollRef = useRef(null);
 
@@ -30,6 +30,8 @@ const Gallery = () => {
     const [unlockedIndices, setUnlockedIndices] = useState([]);
 
     useEffect(() => {
+        if (forceUnlock) return; // Don't need to load if forced
+
         const loadCollection = () => {
             const saved = JSON.parse(localStorage.getItem('wedding_collection') || '[]');
             setUnlockedIndices(saved);
@@ -45,20 +47,23 @@ const Gallery = () => {
             window.removeEventListener('storage', loadCollection);
             window.removeEventListener('collectionUpdated', loadCollection);
         };
-    }, []);
+    }, [forceUnlock]);
 
     // Also reload whenever the modal is opened (simple check could be done better, but this works)
     useEffect(() => {
+        if (forceUnlock) return;
         const saved = JSON.parse(localStorage.getItem('wedding_collection') || '[]');
         setUnlockedIndices(saved);
-    }, [images]); // trigger on mount
+    }, [images, forceUnlock]); // trigger on mount
 
     return (
         <section id="gallery" style={styles.section}>
-            <h2 style={styles.title}>GALLERY ({unlockedIndices.length}/{images.length})</h2>
+            <h2 style={styles.title}>
+                GALLERY {forceUnlock ? '' : `(${unlockedIndices.length}/${images.length})`}
+            </h2>
             <div ref={scrollRef} style={styles.scrollContainer}>
                 {images.map((src, index) => {
-                    const isUnlocked = unlockedIndices.includes(index);
+                    const isUnlocked = forceUnlock || unlockedIndices.includes(index);
                     return (
                         <div key={index} style={styles.imageWrapper} onClick={() => isUnlocked && setSelectedImage(src)}>
                             <img

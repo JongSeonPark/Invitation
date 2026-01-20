@@ -186,7 +186,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
             {activeModal === 'game' && (
                 <GameModal title="전투 시뮬레이션 (GAME)" onClose={closeModal}>
                     <div style={{ background: '#f5f5f5', display: 'flex', justifyContent: 'center' }}>
-                        <DinoGame />
+                        <DinoGame selectedCharacter={character} />
                     </div>
                 </GameModal>
             )}
