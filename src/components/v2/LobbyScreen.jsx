@@ -14,6 +14,7 @@ import StoryMode from './StoryMode';
 import { audioManager } from '../../utils/audioManager';
 import { checkAchievement } from '../../utils/achievementManager';
 import RankingBoard from '../RankingBoard';
+import AchievementBoard from '../AchievementBoard';
 
 const LobbyScreen = ({ onSwitchToV1 }) => {
     const [character, setCharacter] = useState('bride'); // 'groom' or 'bride'
@@ -21,7 +22,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
     const [bubbleText, setBubbleText] = useState('');
     const [activeModal, setActiveModal] = useState(null); // 'map', 'gallery', 'story', 'msg', 'game', 'ranking'
     const [dDay, setDDay] = useState('');
-    const [touchCount, setTouchCount] = useState(0);
+    const [touchCounts, setTouchCounts] = useState({ groom: 0, bride: 0 });
 
     useEffect(() => {
         const targetDate = new Date('2026-04-25T16:50:00');
@@ -63,10 +64,12 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
         setShowBubble(true);
 
         // Achievement Check
-        setTouchCount(prev => {
-            const newCount = prev + 1;
-            checkAchievement('TOUCH_CHARACTER', newCount);
-            return newCount;
+        setTouchCounts(prev => {
+            const newCounts = { ...prev };
+            newCounts[character] += 1; // Increment current character count
+
+            checkAchievement('TOUCH_CHARACTER', newCounts);
+            return newCounts;
         });
 
         // Hide bubble after 3 seconds
@@ -140,6 +143,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                     <MenuButton icon="💎" label="뽑기" onClick={() => toggleModal('recruit')} />
                     <MenuButton icon="📜" label="스토리" onClick={() => toggleModal('story')} />
                     <MenuButton icon="🏆" label="랭킹" onClick={() => toggleModal('ranking')} />
+                    <MenuButton icon="🎖️" label="업적" onClick={() => toggleModal('achievement')} />
                     <MenuButton icon="✉️" label="정보" onClick={() => toggleModal('info')} />
                     <MenuButton icon="🔙" label="구버전" onClick={handleSwitchToV1} />
                 </div>
@@ -197,6 +201,13 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                 <GameModal title="명예의 전당 (RANKING)" onClose={closeModal}>
                     <div style={{ background: '#fff' }}>
                         <RankingBoard />
+                    </div>
+                </GameModal>
+            )}
+            {activeModal === 'achievement' && (
+                <GameModal title="나의 업적 (ACHIEVEMENTS)" onClose={closeModal}>
+                    <div style={{ background: '#fff' }}>
+                        <AchievementBoard />
                     </div>
                 </GameModal>
             )}

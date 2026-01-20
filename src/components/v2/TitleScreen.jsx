@@ -20,7 +20,7 @@ const TitleScreen = ({ onStart }) => {
     };
 
     const handleLogin = async (e) => {
-        e.stopPropagation(); // Prevent bubbling to container click
+        if (e) e.stopPropagation(); // Prevent bubbling to container click
         if (!nickname.trim()) {
             alert("닉네임을 입력해주세요!");
             return;
@@ -38,12 +38,12 @@ const TitleScreen = ({ onStart }) => {
             // 2. Update Profile Name
             await updateProfile(user, { displayName: nickname });
 
-            // 3. Save to Firestore
+            // 3. Save to Firestore (Merge to keep existing achievements)
             await setDoc(doc(db, "users", user.uid), {
                 uid: user.uid,
                 displayName: nickname,
-                createdAt: serverTimestamp(),
-            });
+                lastLoginAt: serverTimestamp(), // Changed to 'lastLoginAt' to track activity
+            }, { merge: true });
 
             // Trigger Achievement
             checkAchievement('LOGIN');
@@ -63,6 +63,12 @@ const TitleScreen = ({ onStart }) => {
             setLoadingText('접속 실패. 다시 시도해주세요.');
             setIsLoggingIn(false);
             alert("접속 중 오류가 발생했습니다: " + error.message);
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleLogin();
         }
     };
 
@@ -88,8 +94,10 @@ const TitleScreen = ({ onStart }) => {
                             placeholder="닉네임을 입력하세요"
                             value={nickname}
                             onChange={(e) => setNickname(e.target.value)}
+                            onKeyPress={handleKeyPress}
                             style={styles.input}
                             maxLength={8}
+                            autoFocus
                         />
                         <button style={styles.startBtn} onClick={handleLogin}>
                             START MISSION

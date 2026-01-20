@@ -10,14 +10,30 @@ const RankingBoard = () => {
     useEffect(() => {
         const fetchRankings = async () => {
             try {
-                const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
+                // Fetch more to handle deduplication (e.g., top 50)
+                const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
 
-                const data = querySnapshot.docs.map(doc => ({
+                const rawData = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-                setRankings(data);
+
+                // Deduplicate by displayName (keep highest score)
+                const uniqueDataMap = new Map();
+                rawData.forEach(item => {
+                    const name = item.displayName;
+                    if (!uniqueDataMap.has(name) || uniqueDataMap.get(name).score < item.score) {
+                        uniqueDataMap.set(name, item);
+                    }
+                });
+
+                // Convert back to array, sort, and take Top 10
+                const processedData = Array.from(uniqueDataMap.values())
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 10);
+
+                setRankings(processedData);
             } catch (error) {
                 console.error("Error fetching rankings: ", error);
             } finally {
@@ -43,7 +59,12 @@ const RankingBoard = () => {
                 </thead>
                 <tbody>
                     {rankings.map((user, index) => {
-                        const isMe = currentUser && currentUser.uid === user.id;
+                        // Check if this row represents the current user by ID OR Nickname match
+                        const isMe = currentUser && (
+                            currentUser.uid === user.id ||
+                            currentUser.displayName === user.displayName
+                        );
+
                         return (
                             <tr key={user.id} style={isMe ? styles.myRow : {}}>
                                 <td style={styles.cell}>{index + 1}</td>
