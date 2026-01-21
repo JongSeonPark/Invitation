@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import groomPixel from '../assets/sprites/groom_pixel.png';
-import bridePixel from '../assets/sprites/bride_pixel.png';
-import groomRun1 from '../assets/sprites/groom_run1.png';
-import groomRun2 from '../assets/sprites/groom_run2.png';
-import brideRun1 from '../assets/sprites/bride_run1.png';
-import brideRun2 from '../assets/sprites/bride_run2.png';
+import groomSprites from '../assets/sprites/groom_sprites.png';
+import brideSprites from '../assets/sprites/bride_sprites.png';
 import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { checkAchievement } from '../utils/achievementManager';
@@ -23,17 +19,12 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     }, [selectedCharacter]);
 
     // Load Images
-    const groomImg = useRef(new Image());
-    const groomRun1Img = useRef(new Image());
-    const groomRun2Img = useRef(new Image());
-
-    const brideImg = useRef(new Image());
-    const brideRun1Img = useRef(new Image());
-    const brideRun2Img = useRef(new Image());
+    const groomSheet = useRef(new Image());
+    const brideSheet = useRef(new Image());
 
     useEffect(() => {
         let loaded = 0;
-        const totalImages = 6;
+        const totalImages = 2;
 
         // Helper to remove background based on top-left pixel
         const processImage = (imgSrc) => {
@@ -90,12 +81,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             };
 
             await Promise.all([
-                assignRef(groomImg, groomPixel),
-                assignRef(groomRun1Img, groomRun1),
-                assignRef(groomRun2Img, groomRun2),
-                assignRef(brideImg, bridePixel),
-                assignRef(brideRun1Img, brideRun1),
-                assignRef(brideRun2Img, brideRun2)
+                assignRef(groomSheet, groomSprites),
+                assignRef(brideSheet, brideSprites)
             ]);
         };
 
@@ -110,7 +97,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
 
     // Game State Ref
     const gameData = useRef({
-        dino: { x: 50, y: 150, w: 40, h: 40, dy: 0, grounded: true },
+        dino: { x: 50, y: 150, w: 75, h: 75, dy: 0, grounded: true },
         obstacles: [],
         frame: 0,
         isGameOver: false,
@@ -153,14 +140,51 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
         }
     };
 
+    // Adjust dimensions based on sprite aspect ratio
+    const resizeDino = () => {
+        const img = character === 'groom' ? groomSheet.current : brideSheet.current;
+        if (img && img.complete && img.width > 0) {
+            const frameW = img.width / 3;
+            // Trim padding to get actual visual width ratio
+            // Consistent with draw logic (paddingX = 20)
+            const paddingX = 20;
+            const effectiveW = frameW - (paddingX * 2);
+
+            const frameH = img.height;
+            const ratio = effectiveW / frameH;
+
+            // Fixed height target (Increased from 60 -> 75)
+            const targetH = 75;
+            const targetW = targetH * ratio;
+
+            gameData.current.dino.w = targetW;
+            gameData.current.dino.h = targetH;
+        }
+    };
+
+    useEffect(() => {
+        if (imagesLoaded) resizeDino();
+    }, [character, imagesLoaded]);
+
     const resetGame = () => {
+        // Reset but keep current dimensions if loaded
+        const currentW = gameData.current.dino.w;
+        const currentH = gameData.current.dino.h;
+
+        let startY = 150;
+        if (canvasRef.current) {
+            const groundY = canvasRef.current.height - 10;
+            startY = groundY - currentH;
+        }
+
         gameData.current = {
-            dino: { x: 50, y: 150, w: 40, h: 40, dy: 0, grounded: true },
+            dino: { x: 50, y: startY, w: currentW, h: currentH, dy: 0, grounded: true },
             obstacles: [],
             frame: 0,
             isGameOver: false,
             animationId: null
         };
+        resizeDino(); // Ensure correct size
         setScore(0);
     };
 
@@ -191,8 +215,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             data.dino.dy += 0.6 * dt;
             data.dino.y += data.dino.dy * dt;
 
-            // Ground floor logic (Moved up by 2px to avoid line overlap)
-            const groundY = canvas.height - 12;
+            // Ground floor logic (Remove -2 cushion to sit lower)
+            const groundY = canvas.height - 10;
 
             if (data.dino.y + data.dino.h > groundY) {
                 data.dino.y = groundY - data.dino.h;
@@ -240,27 +264,16 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             lastTime = performance.now();
             gameData.current.animationId = requestAnimationFrame(loop);
         } else {
+            // Snap to ground for static display (Prevent Jump)
+            const groundY = canvas.height - 10;
+            if (canvas.height > 0 && gameData.current.dino.y + gameData.current.dino.h !== groundY) {
+                gameData.current.dino.y = groundY - gameData.current.dino.h;
+            }
             draw(ctx, canvas, gameData.current);
         }
 
         return () => cancelAnimationFrame(gameData.current.animationId);
     }, [gameState, character, imagesLoaded]);
-
-    // Helper to get current sprite based on state
-    const getSprite = (data) => {
-        const isGroom = character === 'groom';
-        if (gameState !== 'PLAYING' || !data.dino.grounded) {
-            return isGroom ? groomImg.current : brideImg.current;
-        }
-
-        // Run animation (switch every 10 frames)
-        const runFrame = Math.floor(data.frame / 10) % 2;
-        if (isGroom) {
-            return runFrame === 0 ? groomRun1Img.current : groomRun2Img.current;
-        } else {
-            return runFrame === 0 ? brideRun1Img.current : brideRun2Img.current;
-        }
-    };
 
     const draw = (ctx, canvas, data) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -273,11 +286,47 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
         ctx.lineTo(canvas.width, canvas.height - 10);
         ctx.stroke();
 
-        // Dino (Sprite)
-        const img = getSprite(data);
+        // Character Sprite
+        const sheet = character === 'groom' ? groomSheet.current : brideSheet.current;
 
-        if (img && img.complete) {
-            ctx.drawImage(img, data.dino.x, data.dino.y, data.dino.w, data.dino.h);
+        // Configuration for visual offsets (framing)
+        // Adjust 'y' to pull the character down if they look like they are floating
+        const spriteConfig = {
+            groom: {
+                stand: { frameIndex: 0, y: 21 },  // Lowered idle (+5)
+                run1: { frameIndex: 1, y: 22 },
+                run2: { frameIndex: 2, y: 22 }
+            },
+            bride: {
+                stand: { frameIndex: 0, y: 22 },  // Lowered idle (+6)
+                run1: { frameIndex: 1, y: 22 },
+                run2: { frameIndex: 2, y: 22 }
+            }
+        };
+
+        const config = spriteConfig[character] || spriteConfig.groom;
+        let currentPose = config.stand;
+
+        if (gameState === 'PLAYING' && data.dino.grounded) {
+            const runFrame = Math.floor(data.frame / 10) % 2;
+            currentPose = runFrame === 0 ? config.run1 : config.run2;
+        }
+
+        if (sheet && sheet.complete && sheet.width > 0) {
+            const frameWidth = sheet.width / 3;
+            const frameHeight = sheet.height;
+
+            // Trim edges to prevent bleeding next frame
+            // Take 40px off total width (20px from left, 20px from right)
+            const paddingX = 20;
+            const sourceW = frameWidth - (paddingX * 2);
+            const sourceX = (currentPose.frameIndex * frameWidth) + paddingX;
+
+            ctx.drawImage(
+                sheet,
+                sourceX, 0, sourceW, frameHeight, // Source (trimmed)
+                data.dino.x, data.dino.y + currentPose.y, data.dino.w, data.dino.h // Dest
+            );
         } else {
             // Fallback
             ctx.fillStyle = character === 'groom' ? '#000' : '#ff0faf';
