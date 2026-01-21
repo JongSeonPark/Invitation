@@ -34,30 +34,77 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     useEffect(() => {
         let loaded = 0;
         const totalImages = 6;
-        const onPayload = () => {
-            loaded++;
-            if (loaded >= totalImages) setImagesLoaded(true);
+
+        // Helper to remove background based on top-left pixel
+        const processImage = (imgSrc) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    // Get background color from top-left pixel
+                    const bgR = data[0];
+                    const bgG = data[1];
+                    const bgB = data[2];
+
+                    // Tolerance for color matching (increased for better coverage)
+                    const tolerance = 30;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+
+                        if (
+                            Math.abs(r - bgR) < tolerance &&
+                            Math.abs(g - bgG) < tolerance &&
+                            Math.abs(b - bgB) < tolerance
+                        ) {
+                            data[i + 3] = 0; // Make transparent
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+
+                    const processedImg = new Image();
+                    processedImg.onload = () => resolve(processedImg);
+                    processedImg.src = canvas.toDataURL();
+                };
+                img.src = imgSrc;
+            });
         };
 
-        const images = [
-            { ref: groomImg, src: groomPixel },
-            { ref: groomRun1Img, src: groomRun1 },
-            { ref: groomRun2Img, src: groomRun2 },
-            { ref: brideImg, src: bridePixel },
-            { ref: brideRun1Img, src: brideRun1 },
-            { ref: brideRun2Img, src: brideRun2 }
-        ];
+        const loadContent = async () => {
+            const assignRef = async (ref, src) => {
+                const processed = await processImage(src);
+                ref.current = processed;
+                loaded++;
+                if (loaded >= totalImages) setImagesLoaded(true);
+            };
 
-        images.forEach(img => {
-            img.ref.current.onload = onPayload;
-            img.ref.current.src = img.src;
-        });
+            await Promise.all([
+                assignRef(groomImg, groomPixel),
+                assignRef(groomRun1Img, groomRun1),
+                assignRef(groomRun2Img, groomRun2),
+                assignRef(brideImg, bridePixel),
+                assignRef(brideRun1Img, brideRun1),
+                assignRef(brideRun2Img, brideRun2)
+            ]);
+        };
 
-        // Fallback: Force load state after 1s in case onload misses
+        loadContent();
+
+        // Fallback
         const timer = setTimeout(() => {
-            setImagesLoaded(true);
-            console.log("Force setting imagesLoaded via timeout");
-        }, 1000);
+            if (loaded < totalImages) setImagesLoaded(true);
+        }, 2000);
         return () => clearTimeout(timer);
     }, []);
 
@@ -144,8 +191,11 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             data.dino.dy += 0.6 * dt;
             data.dino.y += data.dino.dy * dt;
 
-            if (data.dino.y + data.dino.h > canvas.height - 10) {
-                data.dino.y = canvas.height - 10 - data.dino.h;
+            // Ground floor logic (Moved up by 2px to avoid line overlap)
+            const groundY = canvas.height - 12;
+
+            if (data.dino.y + data.dino.h > groundY) {
+                data.dino.y = groundY - data.dino.h;
                 data.dino.dy = 0;
                 data.dino.grounded = true;
             }
