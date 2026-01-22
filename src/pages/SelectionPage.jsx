@@ -1,93 +1,29 @@
 const SelectionPage = () => {
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h1 style={styles.title}>INVITATION</h1>
-                <p style={styles.subtitle}>박종선 & 윤지수</p>
-                <div style={styles.divider}></div>
-                <p style={styles.date}>2026. 04. 25. SAT PM 04:50</p>
+        <div className="min-h-screen w-full flex items-center justify-center bg-background font-body p-4">
+            <div className="card max-w-md w-full text-center space-y-8">
+                <div className="space-y-2">
+                    <h1 className="text-4xl text-text font-heading tracking-wider">INVITATION</h1>
+                    <p className="text-xl text-text/80 font-medium">박종선 & 윤지수</p>
+                </div>
 
-                <div style={styles.buttonGroup}>
-                    <a href="classic.html" style={styles.buttonClassic}>
-                        ✉️ 청첩장 보기 (Classic)
+                <div className="w-12 h-px bg-gray-300 mx-auto"></div>
+
+                <p className="text-text/60 tracking-widest">2026. 04. 25. SAT PM 04:50</p>
+
+                <div className="flex flex-col gap-4">
+                    <a href="classic.html" className="btn-secondary flex items-center justify-center gap-2 group">
+                        <span className="group-hover:scale-110 transition-transform">✉️</span>
+                        청첩장 보기 (Classic)
                     </a>
-                    <a href="game.html" style={styles.buttonGame}>
-                        🎮 게임 시작 (Game Mode)
+                    <a href="game.html" className="btn-primary flex items-center justify-center gap-2 group">
+                        <span className="group-hover:rotate-12 transition-transform">🎮</span>
+                        게임 시작 (Game Mode)
                     </a>
                 </div>
             </div>
         </div>
     );
-};
-
-const styles = {
-    container: {
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        fontFamily: 'serif',
-    },
-    card: {
-        backgroundColor: 'white',
-        padding: '3rem 2rem',
-        borderRadius: '8px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-        textAlign: 'center',
-        maxWidth: '400px',
-        width: '90%',
-    },
-    title: {
-        fontSize: '2rem',
-        letterSpacing: '0.2em',
-        marginBottom: '1rem',
-        color: '#333',
-    },
-    subtitle: {
-        fontSize: '1.2rem',
-        color: '#666',
-        marginBottom: '2rem',
-    },
-    divider: {
-        width: '50px',
-        height: '1px',
-        backgroundColor: '#ccc',
-        margin: '0 auto 2rem',
-    },
-    date: {
-        fontSize: '1rem',
-        color: '#888',
-        marginBottom: '3rem',
-    },
-    buttonGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '15px',
-    },
-    buttonClassic: {
-        display: 'block',
-        padding: '15px',
-        backgroundColor: '#fff',
-        border: '1px solid #333',
-        color: '#333',
-        textDecoration: 'none',
-        borderRadius: '5px',
-        fontWeight: 'bold',
-        transition: 'all 0.3s',
-    },
-    buttonGame: {
-        display: 'block',
-        padding: '15px',
-        backgroundColor: '#333',
-        border: '1px solid #333',
-        color: '#fff',
-        textDecoration: 'none',
-        borderRadius: '5px',
-        fontWeight: 'bold',
-        transition: 'all 0.3s',
-    }
 };
 
 export default SelectionPage;

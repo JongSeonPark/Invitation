@@ -38,12 +38,10 @@ const CoupleCards = () => {
     ];
 
     const handleCardClick = (card) => {
-        // Copy only Account Number + Bank Name (swapped order)
         const copyText = `${card.account} ${card.bank}`;
         navigator.clipboard.writeText(copyText).then(() => {
-            // Show custom toast instead of alert
             setShowToast(true);
-            setTimeout(() => setShowToast(false), 2000); // Hide after 2 seconds
+            setTimeout(() => setShowToast(false), 2000);
         }).catch(err => {
             console.error('Failed to copy: ', err);
         });
@@ -51,7 +49,7 @@ const CoupleCards = () => {
     };
 
     const handleMouseMove = (e, index, isFocused) => {
-        if (isFocused) return; // Disable tilt when focused to prevent conflict or jumping
+        if (isFocused) return;
 
         const card = document.getElementById(`card-${index}`);
         const rect = card.getBoundingClientRect();
@@ -74,7 +72,7 @@ const CoupleCards = () => {
     };
 
     const handleMouseLeave = (index, isFocused) => {
-        if (isFocused) return; // Do not reset if focused
+        if (isFocused) return;
 
         const card = document.getElementById(`card-${index}`);
         card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
@@ -86,51 +84,76 @@ const CoupleCards = () => {
     };
 
     return (
-        <section style={styles.section}>
-            <h2 style={styles.title}>CARD BATTLE? NO, LOVE!</h2>
-            <p style={styles.subtitle}>
+        <section className="py-24 px-4 bg-gray-50 text-center overflow-hidden">
+            <h2 className="text-sm text-primary tracking-[0.2em] font-bold mb-4 uppercase">
+                CARD BATTLE? NO, LOVE!
+            </h2>
+            <p className="text-gray-500 mb-12 animate-pulse text-sm">
                 👇 카드를 클릭하면 계좌번호가 복사됩니다 👇
             </p>
-            <div style={styles.cardContainer}>
+
+            <div className="flex flex-col md:flex-row justify-center gap-8 items-center max-w-5xl mx-auto relative z-10">
                 {cards.map((card, index) => {
                     const isFocused = focusedCard === card.id;
                     return (
-                        <div key={card.id} style={styles.cardWrapper}>
+                        <div key={card.id} className="relative w-full max-w-[320px] group perspective">
+                            {/* Card Body */}
                             <div
                                 id={`card-${index}`}
-                                style={{
-                                    ...styles.card,
-                                    ...(isFocused ? styles.cardFocused : {}),
-                                    ...(focusedCard && !isFocused ? styles.cardBlurred : {})
-                                }}
+                                className={`
+                                    w-full aspect-[300/440] bg-[#C57038] p-[1.5%] rounded-xl border-4 border-gray-700 shadow-2xl cursor-pointer relative z-20 transition-all duration-300
+                                    ${isFocused ? 'scale-110 -translate-y-4 z-50 brightness-110 shadow-[0_0_30px_rgba(249,115,22,0.6)]' : ''}
+                                    ${focusedCard && !isFocused ? 'blur-sm scale-95 brightness-50' : ''}
+                                `}
                                 onClick={() => handleCardClick(card)}
                                 onMouseMove={(e) => handleMouseMove(e, index, isFocused)}
                                 onMouseLeave={() => handleMouseLeave(index, isFocused)}
                             >
-                                <div className="glare" style={styles.glare}></div>
-                                <div style={styles.cardInner}>
-                                    <div style={styles.cardHeader}>
-                                        <span style={styles.cardName}>{card.name}</span>
-                                        <span style={styles.cardAttribute}>❤️</span>
+                                {/* Glare Effect */}
+                                <div className="glare absolute inset-0 rounded-lg pointer-events-none z-10 opacity-0 transition-opacity duration-200 mix-blend-overlay"></div>
+
+                                {/* Inner Card */}
+                                <div className="bg-[#A85A32] h-full flex flex-col p-1 border border-[#774E36]">
+                                    {/* Header */}
+                                    <div className="flex justify-between items-center bg-white border border-black px-2 py-1 mb-1 shadow-inner rounded-sm">
+                                        <span className="font-bold text-black text-lg">{card.name}</span>
+                                        <span className="text-xl">❤️</span>
                                     </div>
-                                    <div style={styles.cardStars}>{card.stars}</div>
-                                    <div style={styles.cardImageWrapper}>
-                                        <img src={card.img} alt={card.name} style={styles.cardImage} />
+
+                                    {/* Stars */}
+                                    <div className="text-right mb-1 text-xs leading-none tracking-tighter text-yellow-300 drop-shadow-md">
+                                        {card.stars}
                                     </div>
-                                    <div style={styles.cardDescBox}>
-                                        <div style={styles.cardType}>{card.type}</div>
-                                        <p style={styles.cardDesc}>{card.desc}</p>
-                                        <div style={styles.cardStats}>
+
+                                    {/* Image */}
+                                    <div className="w-full aspect-square bg-white border-2 border-gray-400 shadow-inner mb-2 overflow-hidden relative">
+                                        <img src={card.img} alt={card.name} className="w-full h-full object-cover" />
+                                    </div>
+
+                                    {/* Description Box */}
+                                    <div className="flex-1 bg-[#F3EBD8] border-2 border-black p-2 flex flex-col relative overflow-hidden">
+                                        <div className="font-bold border-b border-black mb-1 text-xs inline-block w-full pb-0.5">
+                                            {card.type}
+                                        </div>
+                                        <p className="flex-1 italic text-[0.7rem] leading-snug text-gray-900 line-clamp-4">
+                                            {card.desc}
+                                        </p>
+                                        <div className="border-t border-black pt-1 mt-1 text-right font-mono font-bold text-xs">
                                             <span>ATK/{card.atk}</span>
-                                            <span>DEF/{card.def}</span>
+                                            <span className="ml-2">DEF/{card.def}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div style={styles.accountBox} onClick={() => handleCardClick(card)}>
-                                <span style={styles.bankName}>{card.bank}</span>
-                                <span style={styles.accountNum}>{card.displayAccount}</span>
-                                <span style={styles.accountName}>({card.holder})</span>
+
+                            {/* Bank Account Box */}
+                            <div
+                                className="mt-4 w-full p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-1 items-center z-10 relative"
+                                onClick={() => handleCardClick(card)}
+                            >
+                                <span className="font-bold text-cta text-sm">{card.bank}</span>
+                                <span className="font-mono font-bold text-gray-800 text-base">{card.displayAccount}</span>
+                                <span className="text-xs text-gray-500">({card.holder})</span>
                             </div>
                         </div>
                     );
@@ -138,244 +161,24 @@ const CoupleCards = () => {
             </div>
 
             {/* Toast Notification */}
-            <div style={{
-                ...styles.toast,
-                opacity: showToast ? 1 : 0,
-                transform: showToast ? 'translate(-50%, 0)' : 'translate(-50%, 20px)',
-                pointerEvents: showToast ? 'auto' : 'none'
-            }}>
+            <div
+                className={`
+                    fixed bottom-8 left-1/2 -translate-x-1/2 bg-black/80 text-white px-6 py-3 rounded-full font-bold shadow-xl z-[100] whitespace-nowrap transition-all duration-300
+                    ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}
+                `}
+            >
                 📋 계좌번호가 복사되었습니다!
             </div>
 
+            {/* Backdrop Overlay */}
             {focusedCard && (
-                <div style={styles.overlay} onClick={() => setFocusedCard(null)}></div>
+                <div
+                    className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity duration-300"
+                    onClick={() => setFocusedCard(null)}
+                ></div>
             )}
         </section>
     );
-};
-
-const styles = {
-    section: {
-        padding: '4rem 1rem',
-        backgroundColor: '#fff',
-        color: '#333',
-        textAlign: 'center',
-        overflow: 'hidden',
-    },
-    title: {
-        fontSize: '1.2rem',
-        color: '#C57038',
-        marginBottom: '3rem',
-        letterSpacing: '0.2em',
-        fontFamily: 'serif',
-        fontWeight: 'bold',
-    },
-    subtitle: {
-        fontSize: '0.9rem',
-        color: '#666',
-        marginBottom: '1.5rem',
-        marginTop: '-2rem',
-        fontFamily: 'sans-serif',
-        animation: 'pulse 2s infinite',
-    },
-    cardContainer: {
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '20px', // Increased gap for better spacing
-        flexWrap: 'nowrap',
-        position: 'relative',
-        // zIndex: 10, // Removed to allow overlay to cover children
-        maxWidth: '800px',
-        margin: '0 auto',
-        padding: '0 10px',
-    },
-    cardWrapper: {
-        flex: '1 1 0',
-        width: 0, // Force equal width regardless of content
-        minWidth: '0',
-        maxWidth: '300px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        position: 'relative', // Context for children
-    },
-    card: {
-        width: '100%',
-        height: 'auto',
-        aspectRatio: '300/440',
-        backgroundColor: '#C57038',
-        padding: '1.5%',
-        borderRadius: '8px',
-        border: '2px solid #555',
-        boxShadow: '0 10px 20px rgba(0,0,0,0.5)',
-        cursor: 'pointer',
-        transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.27), filter 0.3s',
-        position: 'relative',
-        userSelect: 'none',
-        marginBottom: '10px', // Space between card and account box
-        zIndex: 2,
-    },
-    cardFocused: {
-        transform: 'scale(1.1) translateY(-20px)',
-        zIndex: 100, // Above overlay
-        boxShadow: '0 0 30px rgba(240, 195, 48, 0.8)',
-        filter: 'brightness(1.1)',
-    },
-    cardBlurred: {
-        filter: 'blur(2px) brightness(0.5)',
-        transform: 'scale(0.9)',
-    },
-    cardInner: {
-        backgroundColor: '#A85A32',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '5px',
-        border: '1px solid #774E36',
-    },
-    cardHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        border: '1px solid #000',
-        padding: '2px 8px',
-        marginBottom: '5px',
-        boxShadow: 'inset 0 0 5px rgba(0,0,0,0.2)',
-        borderRadius: '2px',
-    },
-    cardName: {
-        color: '#000',
-        fontWeight: 'bold',
-        fontSize: '1.1rem',
-        fontFamily: 'sans-serif',
-    },
-    cardAttribute: {
-        fontSize: '1.2rem',
-    },
-    cardStars: {
-        textAlign: 'right',
-        marginBottom: '5px',
-        fontSize: '14px',
-        lineHeight: 1,
-    },
-    cardImageWrapper: {
-        width: '100%',
-        height: 'auto',
-        aspectRatio: '1/1', // Changed from 16/9 to Square for better visibility
-        backgroundColor: '#fff',
-        border: '2px solid #888',
-        boxShadow: '2px 2px 5px rgba(0,0,0,0.3)',
-        marginBottom: '4px',
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    cardImage: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-    },
-    cardDescBox: {
-        flex: 1,
-        backgroundColor: '#F3EBD8',
-        border: '2px solid #000',
-        padding: '4px',
-        fontSize: '0.7rem',
-        color: '#000',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden',
-    },
-    cardType: {
-        fontWeight: 'bold',
-        marginBottom: '2px',
-        borderBottom: '1px solid #000',
-        display: 'inline-block',
-        fontSize: '0.7rem',
-    },
-    cardDesc: {
-        flex: 1,
-        fontStyle: 'italic',
-        lineHeight: '1.3',
-        fontSize: '0.65rem',
-    },
-    cardStats: {
-        borderTop: '1px solid #000',
-        paddingTop: '4px',
-        textAlign: 'right',
-        fontWeight: 'bold',
-        fontFamily: 'monospace',
-    },
-    accountBox: {
-        width: '100%',
-        padding: '8px',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '8px',
-        border: '1px solid #ddd',
-        fontSize: '0.8rem',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        transition: 'background-color 0.2s',
-        position: 'relative',
-        zIndex: 2, // Below overlay (50)
-    },
-    bankName: {
-        fontWeight: 'bold',
-        color: '#C57038',
-        fontSize: '0.75rem',
-    },
-    accountNum: {
-        fontFamily: 'monospace',
-        fontWeight: 'bold',
-        fontSize: '0.7rem', // Reduced from 0.85rem
-        color: '#333',
-    },
-    accountName: {
-        fontSize: '0.7rem',
-        color: '#666',
-    },
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        zIndex: 50, // Increased to cover non-focused items
-    },
-    glare: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        borderRadius: '8px',
-        pointerEvents: 'none',
-        zIndex: 2,
-        opacity: 0,
-        transition: 'opacity 0.2s',
-        mixBlendMode: 'overlay',
-    },
-    toast: {
-        position: 'fixed',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        color: '#fff',
-        padding: '12px 24px',
-        borderRadius: '30px',
-        fontSize: '0.9rem',
-        fontWeight: 'bold',
-        zIndex: 1000,
-        transition: 'opacity 0.3s, transform 0.3s',
-        whiteSpace: 'nowrap',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
-    }
 };
 
 export default CoupleCards;

@@ -1,63 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Serif+KR:wght@300;400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --color-primary: #8E7F7F;
-  /* Soft warm gray/brown */
-  --color-secondary: #D4C4C4;
-  --color-accent: #E8D5C8;
-  --color-bg: #F9F7F5;
-  /* PC Background (Beige) */
-  /* Unified White Theme */
-  --color-text: #2C2C2C;
-  --font-serif: 'Noto Serif KR', serif;
-  --font-sans: 'Gowun Dodum', sans-serif;
+@layer base {
+  body {
+    @apply bg-background text-text font-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@layer components {
+  .btn-primary {
+    @apply bg-cta text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:opacity-90 hover:-translate-y-px shadow-soft-md cursor-pointer;
+  }
 
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  line-height: 1.5;
-  font-weight: 400;
+  .btn-secondary {
+    @apply bg-transparent text-primary border-2 border-primary px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:bg-primary/5 hover:-translate-y-px cursor-pointer;
+  }
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  /* Mobile Tap Highlight Fix */
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  min-height: 100vh;
-}
-
-#root {
-  max-width: 480px;
-  /* Mobile width constraint */
-  margin: 0 auto;
-  background-color: #fff;
-  min-height: 100vh;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  margin-bottom: 0.5em;
-}
-
-img {
-  max-width: 100%;
-  display: block;
+  .card {
+    @apply bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-soft-md transition-all duration-200 hover:shadow-soft-lg hover:-translate-y-0.5 border border-white/20;
+  }
 }

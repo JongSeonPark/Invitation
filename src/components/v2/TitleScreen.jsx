@@ -1,249 +1,60 @@
-import { useState } from 'react';
-import { audioManager } from '../../utils/audioManager';
-import { auth, db } from '../../firebase';
-import { signInAnonymously, updateProfile } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { checkAchievement } from '../../utils/achievementManager';
+import { useEffect, useState } from 'react';
 
-const TitleScreen = ({ onStart }) => {
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
-    const [loadingText, setLoadingText] = useState('');
-    const [nickname, setNickname] = useState('');
-    const [showInput, setShowInput] = useState(false);
+const TitleScreen = ({ onStart, onSwitchToV1 }) => {
+    const [animate, setAnimate] = useState(false);
 
-    const handleTouch = () => {
-        if (showInput || isLoggingIn) return;
-
-        audioManager.init();
-        audioManager.playConfirm();
-        setShowInput(true);
-    };
-
-    const handleLogin = async (e) => {
-        if (e) e.stopPropagation(); // Prevent bubbling to container click
-        if (!nickname.trim()) {
-            alert("닉네임을 입력해주세요!");
-            return;
-        }
-
-        audioManager.playConfirm();
-        setIsLoggingIn(true);
-        setLoadingText('서버 접속 중...');
-
-        try {
-            // 1. Anonymous Login
-            const result = await signInAnonymously(auth);
-            const user = result.user;
-
-            // 2. Update Profile Name
-            await updateProfile(user, { displayName: nickname });
-
-            // 3. Save to Firestore (Merge to keep existing achievements)
-            await setDoc(doc(db, "users", user.uid), {
-                uid: user.uid,
-                displayName: nickname,
-                lastLoginAt: serverTimestamp(), // Changed to 'lastLoginAt' to track activity
-            }, { merge: true });
-
-            // Trigger Achievement
-            checkAchievement('LOGIN');
-
-            // 4. Loading Sequence
-            setLoadingText('신랑의 긴장도 체크 중... 위험 수치! 💓');
-            setTimeout(() => setLoadingText('신부의 미모 데이터 로딩 중... 용량 초과! ✨'), 800);
-            setTimeout(() => setLoadingText('축의금 계좌 보안 프로토콜 가동... 💸'), 1600);
-            setTimeout(() => setLoadingText('환영합니다. 작전명 [백년가약] 개시.'), 2400);
-
-            setTimeout(() => {
-                onStart();
-            }, 3000);
-
-        } catch (error) {
-            console.error("Login Failed:", error);
-            setLoadingText('접속 실패. 다시 시도해주세요.');
-            setIsLoggingIn(false);
-            alert("접속 중 오류가 발생했습니다: " + error.message);
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            handleLogin();
-        }
-    };
+    useEffect(() => {
+        setAnimate(true);
+    }, []);
 
     return (
-        <div style={styles.container} onClick={handleTouch}>
-            {/* Background Effect */}
-            <div style={styles.bgOverlay}></div>
+        <div className="flex flex-col items-center justify-center h-full w-full bg-gradient-to-b from-yellow-300 to-orange-400 p-4">
 
-            <div style={styles.content}>
-                <h1 style={styles.title}>
-                    <span style={styles.titleSmall}>WEDDING OPERATION</span><br />
-                    CODE: LOVE
+            {/* Logo Area - Bouncy & Cheeky */}
+            <div className={`transform transition-all duration-1000 ${animate ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-[-50px] opacity-0 scale-90'}`}>
+                <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-[0_5px_5px_rgba(0,0,0,0.2)] tracking-tighter mb-2 animate-bounce">
+                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-cyan-500 transform -rotate-6">W</span>
+                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-pink-500 transform rotate-3">E</span>
+                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-yellow-300 transform -rotate-3">D</span>
+                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-green-400 transform rotate-6">D</span>
+                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-purple-400 transform -rotate-2">I</span>
+                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-red-400 transform rotate-4">N</span>
+                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-blue-400 transform -rotate-3">G</span>
                 </h1>
-
-                {!showInput && !isLoggingIn && (
-                    <p style={styles.touchText}>TAP TO START</p>
-                )}
-
-                {showInput && !isLoggingIn && (
-                    <div style={styles.loginBox} onClick={(e) => e.stopPropagation()}>
-                        <input
-                            type="text"
-                            placeholder="닉네임을 입력하세요"
-                            value={nickname}
-                            onChange={(e) => setNickname(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            style={styles.input}
-                            maxLength={8}
-                            autoFocus
-                        />
-                        <button style={styles.startBtn} onClick={handleLogin}>
-                            START MISSION
-                        </button>
-                    </div>
-                )}
-
-                {isLoggingIn && (
-                    <div style={styles.loadingBox}>
-                        <div style={styles.spinner}></div>
-                        <p style={styles.loadingText}>{loadingText}</p>
-                    </div>
-                )}
-
-                <p style={styles.version}>VER. 2026.4.25</p>
+                <p className="text-white text-xl md:text-2xl font-bold text-center drop-shadow-md bg-black/20 rounded-full px-6 py-2 mx-auto w-fit backdrop-blur-sm">
+                    Is Coming!
+                </p>
             </div>
+
+            {/* Character Placeholder (Cheeky) */}
+            <div className="my-8 relative group cursor-pointer">
+                <div className="w-32 h-32 bg-white rounded-full border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] flex items-center justify-center text-4xl overflow-hidden transform transition-transform group-hover:scale-110 group-active:scale-95 duration-200">
+                    👰🤵
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-bounce">
+                    TOUCH ME!
+                </div>
+            </div>
+
+            {/* Start Button - Squishy */}
+            <button
+                onClick={onStart}
+                className="group relative bg-white border-4 border-black px-12 py-4 rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[8px] active:translate-y-[8px] transition-all duration-100 mb-6"
+            >
+                <span className="block text-2xl font-black text-black group-hover:scale-110 transition-transform">
+                    GAME START
+                </span>
+            </button>
+
+            {/* Switch Mode */}
+            <button
+                onClick={onSwitchToV1}
+                className="text-white/80 font-bold underline hover:text-white transition-colors text-sm"
+            >
+                Back to Classic Mode
+            </button>
         </div>
     );
 };
-
-const styles = {
-    container: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#1a1a1a',
-        color: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        fontFamily: '"Rajdhani", sans-serif',
-    },
-    bgOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        background: 'linear-gradient(45deg, #2b1055, #7597de)',
-        opacity: 0.3,
-        zIndex: 0,
-    },
-    content: {
-        zIndex: 1,
-        textAlign: 'center',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    title: {
-        fontSize: '2.5rem',
-        fontWeight: '900',
-        letterSpacing: '2px',
-        marginBottom: '3rem', // Adjusted margin
-        textShadow: '0 0 10px rgba(0, 255, 255, 0.7)',
-        lineHeight: '0.9',
-    },
-    titleSmall: {
-        fontSize: '1rem',
-        color: '#00eaff',
-        letterSpacing: '5px',
-    },
-    touchText: {
-        fontSize: '1.2rem',
-        animation: 'blink 1.5s infinite',
-        color: '#ccc',
-        letterSpacing: '2px',
-    },
-    loginBox: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '15px',
-        animation: 'fadeIn 0.5s ease-out',
-    },
-    input: {
-        padding: '10px 15px',
-        fontSize: '1rem',
-        borderRadius: '5px',
-        border: '2px solid #00eaff',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        color: '#fff',
-        textAlign: 'center',
-        outline: 'none',
-        width: '200px',
-    },
-    startBtn: {
-        padding: '10px 20px',
-        backgroundColor: '#00eaff',
-        color: '#000',
-        border: 'none',
-        borderRadius: '5px',
-        fontWeight: 'bold',
-        fontSize: '1rem',
-        cursor: 'pointer',
-        boxShadow: '0 0 10px rgba(0, 234, 255, 0.5)',
-        transition: 'transform 0.1s',
-    },
-    loadingBox: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '10px',
-        height: '60px',
-    },
-    spinner: {
-        width: '20px',
-        height: '20px',
-        border: '3px solid rgba(255,255,255,0.3)',
-        borderTop: '3px solid #00eaff',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-    },
-    loadingText: {
-        fontSize: '0.9rem',
-        color: '#00eaff',
-        fontFamily: 'monospace',
-    },
-    version: {
-        position: 'absolute',
-        bottom: '20px',
-        right: '20px',
-        fontSize: '0.7rem',
-        color: '#555',
-    }
-};
-
-// Add global styles for animations locally
-const styleSheet = document.createElement("style");
-styleSheet.innerText = `
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-`;
-document.head.appendChild(styleSheet);
 
 export default TitleScreen;

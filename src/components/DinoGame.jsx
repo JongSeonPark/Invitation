@@ -354,118 +354,52 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     };
 
     return (
-        <section style={styles.section}>
-            <h2 style={styles.title}>RUN TO WEDDING</h2>
+        <section className="py-20 px-4 text-center bg-gray-50 select-none">
+            <h2 className="text-sm text-primary tracking-[0.2em] font-bold mb-8 uppercase">
+                RUN TO WEDDING
+            </h2>
             <div
-                style={styles.gameContainer}
+                className="relative inline-block w-full max-w-3xl aspect-[16/10] bg-white rounded-xl shadow-soft-xl overflow-hidden cursor-pointer touch-manipulation border border-gray-200"
                 onClick={handleAction}
             >
                 <canvas
                     ref={canvasRef}
                     width={320}
                     height={200}
-                    style={styles.canvas}
+                    className="w-full h-full block pixelated"
+                    style={{ imageRendering: 'pixelated' }}
                 ></canvas>
 
                 {gameState === 'START' && (
-                    <div style={styles.overlay}>
-                        <p style={{ marginBottom: '10px' }}>TAP TO START</p>
-                        <button style={styles.startBtn} onClick={(e) => {
-                            e.stopPropagation();
-                            resetGame();
-                            setGameState('PLAYING');
-                            checkAchievement('GAME_START');
-                        }}>GAME START</button>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center bg-white/95 px-8 py-6 rounded-xl shadow-lg border border-gray-100 min-w-[240px]">
+                        <p className="mb-4 font-bold text-gray-800 tracking-wider">TAP TO START</p>
+                        <button
+                            className="bg-cta text-white px-6 py-2 rounded-full font-bold shadow-md hover:scale-105 active:scale-95 transition-transform"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                resetGame();
+                                setGameState('PLAYING');
+                                checkAchievement('GAME_START');
+                            }}
+                        >
+                            GAME START
+                        </button>
                     </div>
                 )}
                 {gameState === 'GAME_OVER' && (
-                    <div style={styles.overlay}>
-                        <p>GAME OVER</p>
-                        <p style={{ fontSize: '0.8rem' }}>Score: {score}</p>
-                        <p style={{ fontSize: '0.7rem', color: '#666' }}>High: {savedHighScore > score ? savedHighScore : score}</p>
-                        <p style={{ fontSize: '0.8rem', marginTop: '5px' }}>Tap to Retry</p>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center bg-white/95 px-8 py-6 rounded-xl shadow-lg border border-gray-100 min-w-[240px]">
+                        <p className="font-black text-xl text-gray-800 mb-2">GAME OVER</p>
+                        <p className="text-lg font-mono font-bold text-primary mb-1">Score: {score}</p>
+                        <p className="text-sm text-gray-500 mb-4">High: {savedHighScore > score ? savedHighScore : score}</p>
+                        <p className="text-sm font-medium text-gray-400 animate-pulse">Tap to Retry</p>
                     </div>
                 )}
-                <div style={styles.score}>Score: {score}</div>
+                <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1 rounded font-mono font-bold text-lg shadow-sm">
+                    Score: {score}
+                </div>
             </div>
         </section>
     );
 };
-
-const styles = {
-    section: {
-        padding: '3rem 1rem',
-        textAlign: 'center',
-        backgroundColor: '#fff',
-        userSelect: 'none',
-    },
-    title: {
-        fontSize: '0.9rem',
-        color: 'var(--color-primary)',
-        marginBottom: '1rem',
-        letterSpacing: '0.2em',
-        textTransform: 'uppercase',
-    },
-    gameContainer: {
-        position: 'relative',
-        display: 'inline-block',
-        cursor: 'pointer',
-        tapHighlightColor: 'transparent',
-    },
-    canvas: {
-        backgroundColor: '#fff',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        maxWidth: '100%',
-    },
-    overlay: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        textAlign: 'center',
-        background: 'rgba(255,255,255,0.95)',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        fontWeight: 'bold',
-        color: '#333',
-        minWidth: '220px',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-    },
-    score: {
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        fontFamily: 'monospace',
-        fontSize: '1.2rem',
-        fontWeight: 'bold',
-        color: '#333',
-        backgroundColor: 'rgba(255,255,255,0.7)',
-        padding: '2px 5px',
-        borderRadius: '4px',
-        zIndex: 10,
-    },
-    startBtn: {
-        background: '#00eaff',
-        color: '#141824',
-        border: 'none',
-        padding: '10px 20px',
-        borderRadius: '4px',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        boxShadow: '0 0 10px rgba(0, 234, 255, 0.5)',
-    },
-    charBtn: {
-        marginTop: '10px',
-        padding: '8px 12px',
-        backgroundColor: '#f0f0f0',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '0.8rem',
-        transition: 'all 0.2s',
-    }
-}
 
 export default DinoGame;

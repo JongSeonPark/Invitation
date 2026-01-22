@@ -10,29 +10,22 @@ const Version2 = ({ onSwitchToV1 }) => {
     };
 
     return (
-        <div style={styles.container}>
-            {scene === 'title' && <TitleScreen onStart={handleStartGame} />}
-            {scene === 'lobby' && <LobbyScreen onSwitchToV1={onSwitchToV1} />}
+        <div className="relative w-full h-screen bg-yellow-50 overflow-hidden font-sans">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{
+                    backgroundImage: 'radial-gradient(#F97316 2px, transparent 2px)',
+                    backgroundSize: '30px 30px'
+                }}
+            ></div>
+
+            {/* Content Container */}
+            <div className="relative w-full h-full">
+                {scene === 'title' && <TitleScreen onStart={handleStartGame} onSwitchToV1={onSwitchToV1} />}
+                {scene === 'lobby' && <LobbyScreen onSwitchToV1={onSwitchToV1} />}
+            </div>
         </div>
     );
-};
-
-const styles = {
-    container: {
-        width: '100%',
-        height: '100vh',
-        backgroundColor: '#000',
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    lobbyPlaceholder: {
-        color: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100%',
-    }
 };
 
 export default Version2;

@@ -57,28 +57,35 @@ const Gallery = ({ forceUnlock = false }) => {
     }, [images, forceUnlock]); // trigger on mount
 
     return (
-        <section id="gallery" style={styles.section}>
-            <h2 style={styles.title}>
+        <section id="gallery" className="py-20 bg-white text-center overflow-hidden">
+            <h2 className="text-sm text-primary tracking-[0.2em] font-bold mb-8 uppercase">
                 GALLERY {forceUnlock ? '' : `(${unlockedIndices.length}/${images.length})`}
             </h2>
-            <div ref={scrollRef} style={styles.scrollContainer}>
+
+            <div
+                ref={scrollRef}
+                className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-8 pb-8 scrollbar-hide"
+            >
                 {images.map((src, index) => {
                     const isUnlocked = forceUnlock || unlockedIndices.includes(index);
                     return (
-                        <div key={index} style={styles.imageWrapper} onClick={() => isUnlocked && setSelectedImage(src)}>
-                            <img
-                                src={src}
-                                alt={`Gallery ${index + 1}`}
-                                style={{
-                                    ...styles.image,
-                                    filter: isUnlocked ? 'none' : 'blur(10px) grayscale(100%)',
-                                    cursor: isUnlocked ? 'pointer' : 'not-allowed'
-                                }}
-                            />
+                        <div
+                            key={index}
+                            className="relative flex-none w-[85vw] md:w-[600px] snap-center rounded-xl overflow-hidden shadow-soft-md transition-transform hover:scale-[1.02] duration-300"
+                            onClick={() => isUnlocked && setSelectedImage(src)}
+                        >
+                            <div className="w-full aspect-[3/4] md:aspect-[16/9]">
+                                <img
+                                    src={src}
+                                    alt={`Gallery ${index + 1}`}
+                                    className={`w-full h-full object-cover transition-all duration-500 ${isUnlocked ? 'cursor-pointer hover:brightness-110' : 'blur-xl grayscale cursor-not-allowed'}`}
+                                />
+                            </div>
+
                             {!isUnlocked && (
-                                <div style={styles.lockOverlay}>
-                                    <span style={{ fontSize: '2rem' }}>🔒</span>
-                                    <span style={{ fontSize: '0.8rem', color: '#fff', marginTop: '5px' }}>잠김</span>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white z-10 backdrop-blur-sm">
+                                    <span className="text-4xl mb-2">🔒</span>
+                                    <span className="text-sm font-medium tracking-wider">LOCKED</span>
                                 </div>
                             )}
                         </div>
@@ -86,84 +93,25 @@ const Gallery = ({ forceUnlock = false }) => {
                 })}
             </div>
 
-            {/* Scroll indicator dots could go here */}
-
             {selectedImage && (
-                <div style={styles.modal} onClick={() => setSelectedImage(null)}>
-                    <div style={styles.modalContent}>
-                        <img src={selectedImage} alt="Full view" style={styles.fullImage} />
-                    </div>
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-200"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <img
+                        src={selectedImage}
+                        alt="Full view"
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                    />
+                    <button className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
             )}
         </section>
     );
-};
-
-const styles = {
-    section: {
-        padding: '4rem 0',
-        backgroundColor: '#fff',
-        textAlign: 'center',
-    },
-    title: {
-        fontSize: '0.9rem',
-        color: 'var(--color-primary)',
-        marginBottom: '2rem',
-        letterSpacing: '0.2em',
-        textTransform: 'uppercase',
-    },
-    scrollContainer: {
-        display: 'flex',
-        overflowX: 'auto',
-        gap: '1rem',
-        padding: '0 2rem 2rem', // Bottom padding for scrollbar
-        scrollSnapType: 'x mandatory',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none', // Firefox
-    },
-    imageWrapper: {
-        position: 'relative', // Context for lockOverlay
-        flex: '0 0 80%', // Show 80% of image
-        scrollSnapAlign: 'center',
-        borderRadius: '4px',
-        overflow: 'hidden',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-    },
-    image: {
-        width: '100%',
-        height: '400px', // Fixed height
-        objectFit: 'cover',
-    },
-    modal: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.9)',
-        zIndex: 1000,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    fullImage: {
-        maxWidth: '100%',
-        maxHeight: '90vh',
-        objectFit: 'contain',
-    },
-    lockOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        zIndex: 1,
-    }
 };
 
 export default Gallery;
