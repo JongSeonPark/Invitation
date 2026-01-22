@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import groomSprites from '../assets/sprites/groom_sprites.png';
 import brideSprites from '../assets/sprites/bride_sprites.png';
 import { auth, db } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { checkAchievement } from '../utils/achievementManager';
 
 const DinoGame = ({ selectedCharacter = 'groom' }) => {
@@ -10,10 +10,9 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const [gameState, setGameState] = useState('START'); // START, PLAYING, GAME_OVER
     const [score, setScore] = useState(0);
     const [character, setCharacter] = useState(selectedCharacter);
-    const [savedHighScore, setSavedHighScore] = useState(0); // For display feedback
+    const [savedHighScore, setSavedHighScore] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
 
-    // Sync character if prop changes
     useEffect(() => {
         setCharacter(selectedCharacter);
     }, [selectedCharacter]);
@@ -26,7 +25,6 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
         let loaded = 0;
         const totalImages = 2;
 
-        // Helper to remove background based on top-left pixel
         const processImage = (imgSrc) => {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -37,33 +35,16 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                     canvas.height = img.height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0);
-
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imgData.data;
-
-                    // Get background color from top-left pixel
-                    const bgR = data[0];
-                    const bgG = data[1];
-                    const bgB = data[2];
-
-                    // Tolerance for color matching (increased for better coverage)
+                    const bgR = data[0], bgG = data[1], bgB = data[2];
                     const tolerance = 30;
-
                     for (let i = 0; i < data.length; i += 4) {
-                        const r = data[i];
-                        const g = data[i + 1];
-                        const b = data[i + 2];
-
-                        if (
-                            Math.abs(r - bgR) < tolerance &&
-                            Math.abs(g - bgG) < tolerance &&
-                            Math.abs(b - bgB) < tolerance
-                        ) {
-                            data[i + 3] = 0; // Make transparent
+                        if (Math.abs(data[i] - bgR) < tolerance && Math.abs(data[i + 1] - bgG) < tolerance && Math.abs(data[i + 2] - bgB) < tolerance) {
+                            data[i + 3] = 0;
                         }
                     }
                     ctx.putImageData(imgData, 0, 0);
-
                     const processedImg = new Image();
                     processedImg.onload = () => resolve(processedImg);
                     processedImg.src = canvas.toDataURL();
@@ -79,167 +60,198 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 loaded++;
                 if (loaded >= totalImages) setImagesLoaded(true);
             };
-
             await Promise.all([
                 assignRef(groomSheet, groomSprites),
                 assignRef(brideSheet, brideSprites)
             ]);
         };
-
         loadContent();
-
-        // Fallback
-        const timer = setTimeout(() => {
-            if (loaded < totalImages) setImagesLoaded(true);
-        }, 2000);
-        return () => clearTimeout(timer);
     }, []);
 
-    // Game State Ref
+    // Game Constants
+    const CANVAS_WIDTH = 800;
+    const CANVAS_HEIGHT = 400;
+    const GROUND_HEIGHT = 50;
+
+    // Config
+    const BASE_SIZE = 160;   // Increased from 130 to 160 (approx 1.2x)
+    const Y_OFFSET = 40;     // Push down deeper to fix visuals (30 -> 40)
+
+    // Initial State Calculation
+    const getInitialDinoState = () => ({
+        x: 50,
+        y: CANVAS_HEIGHT - GROUND_HEIGHT - BASE_SIZE,
+        w: BASE_SIZE,
+        h: BASE_SIZE,
+        dy: 0,
+        grounded: true,
+        rotation: 0
+    });
+
     const gameData = useRef({
-        dino: { x: 50, y: 150, w: 75, h: 75, dy: 0, grounded: true },
+        dino: getInitialDinoState(), // Correct reset from start
         obstacles: [],
+        clouds: [],
+        particles: [],
         frame: 0,
+        bgOffset: 0,
         isGameOver: false,
         animationId: null
     });
 
-    // Save Score Logic
-    const saveScore = async (finalScore) => {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        try {
-            const scoreRef = doc(db, "scores", user.uid);
-            const scoreSnap = await getDoc(scoreRef);
-
-            let shouldUpdate = true;
-            if (scoreSnap.exists()) {
-                const prevData = scoreSnap.data();
-                if (prevData.score >= finalScore) {
-                    shouldUpdate = false;
-                    setSavedHighScore(prevData.score);
-                } else {
-                    setSavedHighScore(finalScore);
-                }
-            } else {
-                setSavedHighScore(finalScore);
-            }
-
-            if (shouldUpdate) {
-                await setDoc(scoreRef, {
-                    uid: user.uid,
-                    displayName: user.displayName || 'Anonymous',
-                    score: finalScore,
-                    timestamp: serverTimestamp()
-                });
-                console.log("New High Score Saved!");
-            }
-        } catch (error) {
-            console.error("Error saving score:", error);
-        }
-    };
-
-    // Adjust dimensions based on sprite aspect ratio
-    const resizeDino = () => {
-        const img = character === 'groom' ? groomSheet.current : brideSheet.current;
-        if (img && img.complete && img.width > 0) {
-            const frameW = img.width / 3;
-            // Trim padding to get actual visual width ratio
-            // Consistent with draw logic (paddingX = 20)
-            const paddingX = 20;
-            const effectiveW = frameW - (paddingX * 2);
-
-            const frameH = img.height;
-            const ratio = effectiveW / frameH;
-
-            // Fixed height target (Increased from 60 -> 75)
-            const targetH = 75;
-            const targetW = targetH * ratio;
-
-            gameData.current.dino.w = targetW;
-            gameData.current.dino.h = targetH;
-        }
-    };
-
-    useEffect(() => {
-        if (imagesLoaded) resizeDino();
-    }, [character, imagesLoaded]);
-
     const resetGame = () => {
-        // Reset but keep current dimensions if loaded
-        const currentW = gameData.current.dino.w;
-        const currentH = gameData.current.dino.h;
+        // Recalculate aspect ratio logic
+        const currentH = BASE_SIZE;
+        let currentW = BASE_SIZE;
 
-        let startY = 150;
-        if (canvasRef.current) {
-            const groundY = canvasRef.current.height - 10;
-            startY = groundY - currentH;
+        const sheet = character === 'groom' ? groomSheet.current : brideSheet.current;
+        if (sheet && sheet.complete && sheet.width > 0) {
+            const frameW = sheet.width / 3;
+            const frameH = sheet.height;
+            const ratio = frameW / frameH;
+            currentW = currentH * ratio;
         }
 
         gameData.current = {
-            dino: { x: 50, y: startY, w: currentW, h: currentH, dy: 0, grounded: true },
+            dino: {
+                x: 100,
+                y: CANVAS_HEIGHT - GROUND_HEIGHT - currentH,
+                w: currentW,
+                h: currentH,
+                dy: 0,
+                grounded: true,
+                rotation: 0
+            },
             obstacles: [],
+            clouds: [],
+            particles: [],
             frame: 0,
+            bgOffset: 0,
             isGameOver: false,
             animationId: null
         };
-        resizeDino(); // Ensure correct size
         setScore(0);
+
+        for (let i = 0; i < 5; i++) {
+            gameData.current.clouds.push({
+                x: Math.random() * CANVAS_WIDTH,
+                y: Math.random() * (CANVAS_HEIGHT / 2),
+                speed: 0.5 + Math.random() * 1
+            });
+        }
     };
 
     const jump = () => {
         if (gameData.current.dino.grounded) {
-            gameData.current.dino.dy = -10;
+            gameData.current.dino.dy = -18; // Stronger jump for bigger body
             gameData.current.dino.grounded = false;
+
+            for (let i = 0; i < 8; i++) {
+                gameData.current.particles.push({
+                    x: gameData.current.dino.x + (gameData.current.dino.w / 2),
+                    y: gameData.current.dino.y + gameData.current.dino.h + Y_OFFSET,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 4,
+                    life: 25
+                });
+            }
+        }
+    };
+
+    const saveScore = async (finalScore) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        try {
+            const scoreRef = doc(db, "scores", user.uid);
+            await setDoc(scoreRef, {
+                uid: user.uid,
+                displayName: user.displayName || 'Guest',
+                score: finalScore,
+                timestamp: serverTimestamp()
+            }, { merge: true });
+
+            if (finalScore > savedHighScore) setSavedHighScore(finalScore);
+        } catch (error) {
+            console.error(error);
         }
     };
 
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
         let lastTime = performance.now();
 
         const loop = (time) => {
             if (gameState !== 'PLAYING') return;
-
-            const dt = (time - lastTime) / 16;
+            const dt = Math.min((time - lastTime) / 16, 2);
             lastTime = time;
 
             const data = gameData.current;
             data.frame++;
+            data.bgOffset += 2 * dt;
 
-            if (data.frame % 10 === 0) setScore(Math.floor(data.frame / 5));
+            // Score
+            if (data.frame % 5 === 0) setScore(Math.floor(data.frame / 5));
 
             // Physics
-            data.dino.dy += 0.6 * dt;
+            data.dino.dy += 0.8 * dt;
             data.dino.y += data.dino.dy * dt;
 
-            // Ground floor logic (Remove -2 cushion to sit lower)
-            const groundY = canvas.height - 10;
-
-            if (data.dino.y + data.dino.h > groundY) {
-                data.dino.y = groundY - data.dino.h;
+            // Ground Collision
+            if (data.dino.y + data.dino.h > CANVAS_HEIGHT - GROUND_HEIGHT) {
+                data.dino.y = CANVAS_HEIGHT - GROUND_HEIGHT - data.dino.h;
                 data.dino.dy = 0;
                 data.dino.grounded = true;
             }
 
             // Obstacles
-            if (data.frame % (100 + Math.floor(Math.random() * 50)) === 0) {
-                data.obstacles.push({ x: canvas.width, y: canvas.height - 10 - 20, w: 20, h: 20 });
+            if (data.frame % 100 === 0) { // Slightly faster spawn
+                const types = ['🎂', '🎁', '✉️', '👰‍♀️', '🤵‍♂️'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                data.obstacles.push({
+                    x: CANVAS_WIDTH,
+                    y: CANVAS_HEIGHT - GROUND_HEIGHT - 60,
+                    w: 60, // Bigger obstacles too
+                    h: 60,
+                    type: type,
+                    angle: 0
+                });
             }
 
-            data.obstacles.forEach(obs => obs.x -= 5 * dt);
+            data.obstacles.forEach(obs => {
+                obs.x -= 7 * dt; // Faster game speed
+                obs.angle += 0.05;
+            });
             data.obstacles = data.obstacles.filter(obs => obs.x + obs.w > 0);
 
+            // Clouds
+            data.clouds.forEach(cloud => {
+                cloud.x -= cloud.speed * dt;
+                if (cloud.x + 100 < 0) cloud.x = CANVAS_WIDTH;
+            });
+
+            // Particles
+            data.particles.forEach(p => {
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= dt;
+            });
+            data.particles = data.particles.filter(p => p.life > 0);
+
             // Collision
+            const hitboxPadding = 20;
             let collided = false;
             data.obstacles.forEach(obs => {
                 if (
-                    data.dino.x + 10 < obs.x + obs.w - 5 && // Hitbox adjustment
-                    data.dino.x + data.dino.w - 10 > obs.x + 5 &&
-                    data.dino.y + 5 < obs.y + obs.h - 5 &&
-                    data.dino.y + data.dino.h - 5 > obs.y + 5
+                    data.dino.x + hitboxPadding < obs.x + obs.w - hitboxPadding &&
+                    data.dino.x + data.dino.w - hitboxPadding > obs.x + hitboxPadding &&
+                    data.dino.y + hitboxPadding < obs.y + obs.h - hitboxPadding &&
+                    // Check logic with Visual Offset in mind? 
+                    // No, logic uses 'y', drawing uses 'y + offset'. 
+                    // Ground collision uses 'y'. So physics is consistent.
+                    data.dino.y + data.dino.h - hitboxPadding > obs.y + hitboxPadding
                 ) {
                     collided = true;
                 }
@@ -248,15 +260,97 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             if (collided) {
                 setGameState('GAME_OVER');
                 data.isGameOver = true;
-                const finalScore = Math.floor(data.frame / 5);
-                saveScore(finalScore);
-                checkAchievement('GAME_SCORE', finalScore);
+                saveScore(Math.floor(data.frame / 5));
+                checkAchievement('GAME_SCORE', Math.floor(data.frame / 5));
             }
 
-            draw(ctx, canvas, data);
+            draw(ctx);
 
             if (!data.isGameOver) {
                 data.animationId = requestAnimationFrame(loop);
+            }
+        };
+
+        const draw = (ctx) => {
+            const data = gameData.current;
+
+            // Sky
+            const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+            gradient.addColorStop(0, '#60A5FA');
+            gradient.addColorStop(1, '#DBEAFE');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            data.clouds.forEach(cloud => {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, 30, 0, Math.PI * 2);
+                ctx.arc(cloud.x + 25, cloud.y - 10, 35, 0, Math.PI * 2);
+                ctx.arc(cloud.x + 50, cloud.y, 30, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Ground
+            ctx.fillStyle = '#991B1B';
+            ctx.fillRect(0, CANVAS_HEIGHT - GROUND_HEIGHT, CANVAS_WIDTH, GROUND_HEIGHT);
+            ctx.fillStyle = '#B91C1C';
+            ctx.fillRect(0, CANVAS_HEIGHT - GROUND_HEIGHT + 10, CANVAS_WIDTH, GROUND_HEIGHT - 20);
+
+            // Character
+            const sheet = character === 'groom' ? groomSheet.current : brideSheet.current;
+            if (sheet && sheet.complete && sheet.width > 0) {
+                const frameW = sheet.width / 3;
+                const frameH = sheet.height;
+                const runFrame = Math.floor(data.frame / 8) % 2 + 1;
+                const frameIndex = data.dino.grounded ? runFrame : 0;
+
+                // Apply Aspect Ratio Fix
+                if (data.dino.w === BASE_SIZE && frameW !== frameH) {
+                    const ratio = frameW / frameH;
+                    data.dino.w = data.dino.h * ratio;
+                }
+
+                ctx.save();
+                // Draw with Offset to ground visuals
+                ctx.drawImage(
+                    sheet,
+                    frameIndex * frameW, 0, frameW, frameH,
+                    data.dino.x, data.dino.y + Y_OFFSET, data.dino.w, data.dino.h
+                );
+                ctx.restore();
+            } else {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(data.dino.x, data.dino.y, data.dino.w, data.dino.h);
+            }
+
+            // Obstacles
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            data.obstacles.forEach(obs => {
+                ctx.save();
+                ctx.translate(obs.x + obs.w / 2, obs.y + obs.h / 2);
+                if (obs.type !== '🎂') ctx.rotate(Math.sin(data.frame * 0.1) * 0.2);
+                ctx.fillText(obs.type, 0, 0);
+                ctx.restore();
+            });
+
+            // Particles
+            ctx.fillStyle = '#fff';
+            data.particles.forEach(p => {
+                ctx.globalAlpha = p.life / 20;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Ground Detail
+            const flowerOffset = -(data.bgOffset % 100);
+            ctx.font = '20px Arial';
+            for (let i = 0; i < CANVAS_WIDTH + 100; i += 100) {
+                ctx.fillText('🌸', i + flowerOffset, CANVAS_HEIGHT - 10);
             }
         };
 
@@ -264,86 +358,19 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             lastTime = performance.now();
             gameData.current.animationId = requestAnimationFrame(loop);
         } else {
-            // Snap to ground for static display (Prevent Jump)
-            const groundY = canvas.height - 10;
-            if (canvas.height > 0 && gameData.current.dino.y + gameData.current.dino.h !== groundY) {
-                gameData.current.dino.y = groundY - gameData.current.dino.h;
-            }
-            draw(ctx, canvas, gameData.current);
+            // Force redraw initial state to prevent "floating" before start
+            // If image is loaded, it might need one 'tick' or just a manual draw call?
+            // Since we rely on 'imagesLoaded' state trigger, it will redraw when loaded.
+            // Just need to ensure `dino` coordinates are correct BEFORE start.
+            // We fixed initialization of gameData.current.dino above.
+            draw(ctx);
         }
 
         return () => cancelAnimationFrame(gameData.current.animationId);
+
     }, [gameState, character, imagesLoaded]);
 
-    const draw = (ctx, canvas, data) => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Ground
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height - 10);
-        ctx.lineTo(canvas.width, canvas.height - 10);
-        ctx.stroke();
-
-        // Character Sprite
-        const sheet = character === 'groom' ? groomSheet.current : brideSheet.current;
-
-        // Configuration for visual offsets (framing)
-        // Adjust 'y' to pull the character down if they look like they are floating
-        const spriteConfig = {
-            groom: {
-                stand: { frameIndex: 0, y: 21 },  // Lowered idle (+5)
-                run1: { frameIndex: 1, y: 22 },
-                run2: { frameIndex: 2, y: 22 }
-            },
-            bride: {
-                stand: { frameIndex: 0, y: 22 },  // Lowered idle (+6)
-                run1: { frameIndex: 1, y: 22 },
-                run2: { frameIndex: 2, y: 22 }
-            }
-        };
-
-        const config = spriteConfig[character] || spriteConfig.groom;
-        let currentPose = config.stand;
-
-        if (gameState === 'PLAYING' && data.dino.grounded) {
-            const runFrame = Math.floor(data.frame / 10) % 2;
-            currentPose = runFrame === 0 ? config.run1 : config.run2;
-        }
-
-        if (sheet && sheet.complete && sheet.width > 0) {
-            const frameWidth = sheet.width / 3;
-            const frameHeight = sheet.height;
-
-            // Trim edges to prevent bleeding next frame
-            // Take 40px off total width (20px from left, 20px from right)
-            const paddingX = 20;
-            const sourceW = frameWidth - (paddingX * 2);
-            const sourceX = (currentPose.frameIndex * frameWidth) + paddingX;
-
-            ctx.drawImage(
-                sheet,
-                sourceX, 0, sourceW, frameHeight, // Source (trimmed)
-                data.dino.x, data.dino.y + currentPose.y, data.dino.w, data.dino.h // Dest
-            );
-        } else {
-            // Fallback
-            ctx.fillStyle = character === 'groom' ? '#000' : '#ff0faf';
-            ctx.fillRect(data.dino.x, data.dino.y, data.dino.w, data.dino.h);
-        }
-
-        // Obstacles
-        ctx.fillStyle = '#555';
-        data.obstacles.forEach(obs => {
-            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-        });
-    };
-
     const handleAction = (e) => {
-        // console.log("handleAction triggered", e?.type);
-        // Removing preventDefault/stopPropagation to fix interaction issues
-
         if (gameState === 'START' || gameState === 'GAME_OVER') {
             resetGame();
             setGameState('PLAYING');
@@ -354,51 +381,46 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     };
 
     return (
-        <section className="py-20 px-4 text-center bg-gray-50 select-none">
-            <h2 className="text-sm text-primary tracking-[0.2em] font-bold mb-8 uppercase">
-                RUN TO WEDDING
-            </h2>
-            <div
-                className="relative inline-block w-full max-w-3xl aspect-[16/10] bg-white rounded-xl shadow-soft-xl overflow-hidden cursor-pointer touch-manipulation border border-gray-200"
-                onClick={handleAction}
-            >
-                <canvas
-                    ref={canvasRef}
-                    width={320}
-                    height={200}
-                    className="w-full h-full block pixelated"
-                    style={{ imageRendering: 'pixelated' }}
-                ></canvas>
+        <div className="relative w-full max-w-3xl aspect-[2/1] bg-white rounded-3xl overflow-hidden shadow-2xl border-4 border-black font-['Jua'] select-none cursor-pointer group" onClick={handleAction}>
+            <canvas
+                ref={canvasRef}
+                width={800}
+                height={400}
+                className="w-full h-full block"
+            ></canvas>
 
-                {gameState === 'START' && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center bg-white/95 px-8 py-6 rounded-xl shadow-lg border border-gray-100 min-w-[240px]">
-                        <p className="mb-4 font-bold text-gray-800 tracking-wider">TAP TO START</p>
-                        <button
-                            className="bg-cta text-white px-6 py-2 rounded-full font-bold shadow-md hover:scale-105 active:scale-95 transition-transform"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                resetGame();
-                                setGameState('PLAYING');
-                                checkAchievement('GAME_START');
-                            }}
-                        >
-                            GAME START
-                        </button>
+            {gameState === 'START' && (
+                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center backdrop-blur-sm">
+                    <h2 className="text-5xl text-white font-black drop-shadow-md mb-4 animate-bounce">WEDDING RUN</h2>
+                    <p className="text-xl text-yellow-300 mb-8 font-bold">화면을 터치해서 점프하세요!</p>
+                    <div className="bg-white text-black px-8 py-3 rounded-full font-black text-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black group-hover:scale-110 transition-transform">
+                        START
                     </div>
-                )}
-                {gameState === 'GAME_OVER' && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center bg-white/95 px-8 py-6 rounded-xl shadow-lg border border-gray-100 min-w-[240px]">
-                        <p className="font-black text-xl text-gray-800 mb-2">GAME OVER</p>
-                        <p className="text-lg font-mono font-bold text-primary mb-1">Score: {score}</p>
-                        <p className="text-sm text-gray-500 mb-4">High: {savedHighScore > score ? savedHighScore : score}</p>
-                        <p className="text-sm font-medium text-gray-400 animate-pulse">Tap to Retry</p>
-                    </div>
-                )}
-                <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1 rounded font-mono font-bold text-lg shadow-sm">
-                    Score: {score}
                 </div>
+            )}
+
+            {gameState === 'GAME_OVER' && (
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-md animate-in zoom-in duration-300">
+                    <p className="text-6xl mb-2">😭</p>
+                    <h2 className="text-4xl text-white font-black mb-2">OOPS!</h2>
+                    <div className="bg-white/90 p-6 rounded-2xl border-4 border-black text-center mb-6 shadow-lg">
+                        <p className="text-sm text-gray-500 font-bold mb-1">SCORE</p>
+                        <p className="text-5xl font-black text-orange-500">{score}</p>
+                    </div>
+                    <div className="bg-[#22D3EE] text-white px-8 py-3 rounded-full font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black animate-pulse">
+                        TRY AGAIN
+                    </div>
+                </div>
+            )}
+
+            <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-4 py-2 rounded-full border-2 border-black font-black text-2xl shadow-md">
+                {score}m
             </div>
-        </section>
+
+            <div className="absolute bottom-2 left-2 text-xs text-white/50 font-bold">
+                Design by Trickcal Style
+            </div>
+        </div>
     );
 };
 

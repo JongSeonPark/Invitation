@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { audioManager } from '../../utils/audioManager';
 
@@ -9,16 +9,16 @@ const images = Object.values(imageModules).map(module => module.default);
 const Recruit = () => {
     const [isAnimating, setIsAnimating] = useState(false);
     const [result, setResult] = useState(null);
-    const [rarity, setRarity] = useState(null); // 'R', 'SR', 'SSR'
+    const [rarity, setRarity] = useState(null);
 
     const handleRecruit = () => {
         if (isAnimating || images.length === 0) return;
 
-        audioManager.playClick(); // Button sound
+        audioManager.playClick();
         setIsAnimating(true);
         setResult(null);
 
-        // Animation Sequence
+        // Animation Sequence (2 seconds)
         setTimeout(() => {
             const randomIndex = Math.floor(Math.random() * images.length);
             const selectedImage = images[randomIndex];
@@ -38,56 +38,100 @@ const Recruit = () => {
             setResult(selectedImage);
             setRarity(newRarity);
             setIsAnimating(false);
+            audioManager.playConfirm();
         }, 2000);
     };
 
     return (
-        <div style={styles.container}>
+        <div className="w-full h-full flex flex-col items-center justify-center bg-[#FCD34D] relative overflow-hidden font-['Jua'] p-4">
+            {/* Background Pattern (Sunburst) */}
+            <div className="absolute inset-0 z-0 opacity-30 pointer-events-none"
+                style={{
+                    background: 'repeating-conic-gradient(#F59E0B 0deg 15deg, transparent 15deg 30deg)'
+                }}
+            ></div>
+
             {!result && !isAnimating && (
-                <div style={styles.startScreen}>
-                    <div style={styles.banner}>
-                        <h2 style={styles.bannerTitle}>사진 뽑기 (GACHA)</h2>
-                        <p style={styles.bannerDesc}>웨딩 포토 컬렉션</p>
+                <div className="z-10 flex flex-col items-center w-full max-w-sm animate-in zoom-in duration-300">
+                    <div className="mb-8 text-center bg-white border-4 border-black px-8 py-4 rounded-[2rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transform -rotate-2">
+                        <h2 className="text-3xl font-black text-black m-0">📷 사진 뽑기</h2>
+                        <p className="text-gray-500 font-bold mt-1 text-sm">오늘의 운세는 과연?</p>
                     </div>
-                    <button style={styles.recruitBtn} onClick={handleRecruit}>
-                        <span style={{ fontSize: '1.2rem' }}>💎</span> 1회 뽑기
+
+                    <button
+                        onClick={handleRecruit}
+                        className="group relative w-64 h-24 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-full border-[6px] border-black shadow-[0px_8px_0px_0px_#1E40AF,0px_15px_10px_rgba(0,0,0,0.4)] active:translate-y-[8px] active:shadow-[0px_0px_0px_0px_#1E40AF] transition-all"
+                    >
+                        <div className="flex items-center justify-center gap-3">
+                            <span className="text-4xl filter drop-shadow animate-bounce">💎</span>
+                            <span className="text-3xl font-black tracking-widest">1회 소환</span>
+                        </div>
+                        {/* Shine Effect */}
+                        <div className="absolute top-2 left-4 w-56 h-8 bg-white opacity-20 rounded-full"></div>
                     </button>
-                    <p style={styles.notice}>* 획득한 사진은 갤러리에서 다시 볼 수 있습니다.</p>
+
+                    <p className="mt-10 text-sm font-bold text-black/60 bg-white/50 px-4 py-1 rounded-full border border-black/10">
+                        * 중복 획득 시 마일리지가...는 없습니다.
+                    </p>
                 </div>
             )}
 
             {isAnimating && (
-                <div style={styles.animationScreen}>
-                    <div style={styles.summonCircle}></div>
-                    <p style={styles.animText}>소환 중...</p>
+                <div className="z-10 flex flex-col items-center justify-center animate-pulse">
+                    <div className="text-8xl mb-4 animate-[bounce_0.5s_infinite]">✉️</div>
+                    <p className="text-2xl font-black text-black">두근두근...</p>
                 </div>
             )}
 
+            {/* Result Overlay */}
             {result && !isAnimating && createPortal(
-                <div style={styles.fullScreenResult}>
-                    <div style={{ ...styles.glow, borderColor: getRarityColor(rarity) }}></div>
-                    <div style={styles.cardFrame}>
-                        <span style={{ ...styles.rarityBadge, backgroundColor: getRarityColor(rarity) }}>
-                            {rarity}
-                        </span>
-                        <img src={result} alt="Gacha Result" style={styles.resultImage} />
-                        <div style={styles.newBadge}>신규!</div>
-                    </div>
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ fontFamily: 'Jua' }}>
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setResult(null)}></div>
 
-                    <h3 style={{ ...styles.resultTitle, color: getRarityColor(rarity) }}>
-                        {rarity === 'SSR' ? '✨ 전설적인 기억 ✨' : rarity === 'SR' ? '💖 소중한 순간' : '📷 나이스 샷'}
-                    </h3>
+                    {/* Card Container */}
+                    <div className="relative z-10 flex flex-col items-center animate-in zoom-in duration-500">
+                        {/* Glow Effect behind card */}
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-${rarity === 'SSR' ? 'yellow' : rarity === 'SR' ? 'pink' : 'blue'}-500 blur-3xl opacity-50 rounded-full animate-pulse`}></div>
 
-                    <div style={styles.floatingButtonGroup}>
-                        <button style={styles.closeBtn} onClick={() => {
-                            audioManager.playConfirm();
-                            setResult(null);
-                        }}>
-                            확인
-                        </button>
-                        <button style={{ ...styles.closeBtn, ...styles.againBtn }} onClick={handleRecruit}>
-                            다시 뽑기 💎
-                        </button>
+                        {/* Polaroid Frame */}
+                        <div className="bg-white p-4 pb-12 rounded-lg shadow-2xl transform rotate-1 border-4 border-gray-200 max-w-[90vw] max-h-[70vh] flex flex-col items-center">
+                            {/* Rarity & New Badge */}
+                            <div className="absolute -top-6 -left-6 z-20">
+                                <span className={`
+                                    inline-block px-4 py-2 rounded-full border-4 border-black text-white font-black text-xl shadow-lg transform -rotate-12
+                                    ${rarity === 'SSR' ? 'bg-[#F59E0B]' : rarity === 'SR' ? 'bg-[#EC4899]' : 'bg-[#3B82F6]'}
+                                `}>
+                                    {rarity} RANK
+                                </span>
+                            </div>
+
+                            <img src={result} alt="Result" className="w-[300px] h-[300px] object-cover rounded border border-gray-100 bg-gray-100" />
+
+                            <h3 className="mt-4 text-2xl font-black text-gray-800 text-center w-full">
+                                {rarity === 'SSR' ? '✨ 전설적인 순간 ✨' : rarity === 'SR' ? '💖 달콤한 기억' : '📷 찰칵!'}
+                            </h3>
+
+                            <div className="absolute bottom-4 right-4 text-gray-400 font-serif text-sm">
+                                2026.04.25
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-4 mt-8">
+                            <button
+                                onClick={() => setResult(null)}
+                                className="px-8 py-3 bg-gray-600 text-white rounded-full font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all"
+                            >
+                                닫기
+                            </button>
+                            <button
+                                onClick={handleRecruit}
+                                className="px-8 py-3 bg-[#3B82F6] text-white rounded-full font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                            >
+                                <span>💎</span> 다시 뽑기
+                            </button>
+                        </div>
                     </div>
                 </div>,
                 document.body
@@ -95,143 +139,5 @@ const Recruit = () => {
         </div>
     );
 };
-
-const getRarityColor = (rarity) => {
-    switch (rarity) {
-        case 'SSR': return '#FFD700';
-        case 'SR': return '#C0C0C0';
-        case 'R': return '#CD7F32';
-        default: return '#fff';
-    }
-};
-
-const styles = {
-    container: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-        background: '#111',
-        overflow: 'hidden',
-        color: '#fff',
-        fontFamily: '"Rajdhani", sans-serif',
-    },
-    startScreen: { textAlign: 'center', width: '100%' },
-    banner: { marginBottom: '40px', animation: 'pulse 2s infinite' },
-    bannerTitle: {
-        fontSize: '2rem',
-        background: 'linear-gradient(to right, #ff9966, #ff5e62)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        margin: 0,
-    },
-    bannerDesc: { color: '#888', margin: '5px 0 0' },
-    recruitBtn: {
-        background: 'linear-gradient(45deg, #00c6ff, #0072ff)',
-        border: 'none',
-        padding: '15px 40px',
-        borderRadius: '30px',
-        color: '#fff',
-        fontSize: '1.2rem',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        boxShadow: '0 0 20px rgba(0, 198, 255, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        margin: '0 auto',
-    },
-    notice: { marginTop: '20px', fontSize: '0.8rem', color: '#555' },
-    animationScreen: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
-    summonCircle: {
-        width: '100px', height: '100px', borderRadius: '50%', border: '5px solid #fff',
-        borderTopColor: 'transparent', animation: 'spin 0.5s linear infinite', boxShadow: '0 0 30px #fff',
-    },
-    animText: { marginTop: '20px', letterSpacing: '5px', animation: 'blink 0.5s infinite' },
-    fullScreenResult: {
-        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 2000,
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-        animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27)',
-    },
-    cardFrame: {
-        position: 'relative',
-        padding: '15px',
-        backgroundColor: '#fff',
-        borderRadius: '15px',
-        boxShadow: '0 0 50px rgba(255,255,255,0.2)',
-        transform: 'rotate(-2deg)',
-    },
-    resultImage: {
-        maxWidth: '90vw',
-        maxHeight: '65vh', // Increased size for full screen
-        display: 'block',
-        borderRadius: '5px',
-        objectFit: 'contain',
-    },
-    resultTitle: {
-        fontSize: '1.5rem',
-        marginTop: '30px',
-        textShadow: '0 0 10px rgba(0,0,0,0.5)',
-        textAlign: 'center',
-    },
-    rarityBadge: {
-        position: 'absolute',
-        top: '-15px',
-        left: '-15px',
-        padding: '8px 15px',
-        fontSize: '1.2rem',
-        borderRadius: '5px',
-        fontWeight: 'bold',
-        color: '#000',
-        zIndex: 10,
-        boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
-    },
-    newBadge: {
-        position: 'absolute',
-        bottom: '20px',
-        right: '-15px',
-        background: '#ff0000',
-        color: '#fff',
-        padding: '5px 12px',
-        fontSize: '1rem',
-        fontWeight: 'bold',
-        transform: 'rotate(5deg)',
-        zIndex: 10,
-        boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
-    },
-    closeBtn: {
-        padding: '12px 30px',
-        background: 'rgba(255,255,255,0.1)',
-        border: '1px solid #fff',
-        color: '#fff',
-        borderRadius: '30px',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        backdropFilter: 'blur(5px)',
-    },
-    againBtn: {
-        background: 'linear-gradient(45deg, #00c6ff, #0072ff)',
-        border: 'none',
-        boxShadow: '0 0 20px rgba(0, 198, 255, 0.6)',
-    },
-    floatingButtonGroup: {
-        display: 'flex',
-        gap: '20px',
-        marginTop: '30px',
-    }
-};
-
-const styleSheet = document.createElement("style");
-styleSheet.innerText += `
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes blink { 50% { opacity: 0.5; } }
-  @keyframes pulse { 50% { transform: scale(1.05); } }
-  @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-`;
-document.head.appendChild(styleSheet);
 
 export default Recruit;

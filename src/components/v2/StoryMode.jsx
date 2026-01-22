@@ -3,7 +3,6 @@ import { audioManager } from '../../utils/audioManager';
 import { storyData } from '../../data/storyData';
 import groomImg from '../../assets/card_images/groom_nobg.png';
 import brideImg from '../../assets/card_images/bride_nobg.png';
-// ...
 
 const StoryMode = ({ onClose }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -20,7 +19,7 @@ const StoryMode = ({ onClose }) => {
 
         let i = 0;
         const text = currentLine.text;
-        const speed = 50;
+        const speed = 30; // Faster typing for modern feel
 
         const timer = setInterval(() => {
             if (i < text.length) {
@@ -38,13 +37,12 @@ const StoryMode = ({ onClose }) => {
     const handleNext = () => {
         audioManager.playClick();
         if (isTyping) {
-            // ...
+            setDisplayedText(currentLine.text);
+            setIsTyping(false);
         } else {
-            // Next line
             if (currentIndex < storyData.length - 1) {
                 setCurrentIndex(prev => prev + 1);
             } else {
-                // End of story
                 audioManager.playConfirm();
                 onClose();
             }
@@ -52,90 +50,47 @@ const StoryMode = ({ onClose }) => {
     };
 
     return (
-        <div style={styles.container} onClick={handleNext}>
-            {/* Background Layer (Optional) */}
-
-            {/* Character Sprite */}
-            <div style={styles.spriteParams}>
-                {currentLine.image === 'groom' && <img src={groomImg} style={styles.sprite} alt="Groom" />}
-                {currentLine.image === 'bride' && <img src={brideImg} style={styles.sprite} alt="Bride" />}
+        <div
+            className="w-full h-full relative flex flex-col justify-end overflow-hidden cursor-pointer min-h-[500px]"
+            onClick={handleNext}
+        >
+            {/* Character Sprite Area - Pop Up Animation */}
+            {/* Adjusted position to be higher up */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[80%] flex items-end transition-transform duration-300">
+                <img
+                    src={currentLine.image === 'groom' ? groomImg : brideImg}
+                    alt="Character"
+                    className="h-full object-contain filter drop-shadow-lg animate-in slide-in-from-bottom-10 fade-in duration-300"
+                    key={currentIndex}
+                />
             </div>
 
-            {/* Dialogue Box */}
-            <div style={styles.dialogueBox}>
-                <div style={styles.nameTag}>
-                    {currentLine.speaker}
+            {/* Dialogue Box - Larger & visual novel style */}
+            <div className="relative z-10 m-4 mb-8">
+                {/* Name Tag */}
+                <div className="absolute -top-7 left-8 bg-[#EF4444] text-white font-['Jua'] px-8 py-2 rounded-t-xl rounded-br-xl border-2 border-black shadow-md transform -skew-x-6 origin-bottom-left z-20">
+                    <span className="text-2xl inline-block transform skew-x-6 drop-shadow-sm">{currentLine.speaker}</span>
                 </div>
-                <p style={styles.text}>{displayedText}</p>
-                <div style={styles.indicator}>▼</div>
+
+                {/* Text Area */}
+                <div className="bg-white/95 backdrop-blur border-4 border-black rounded-3xl p-8 shadow-xl min-h-[200px] relative">
+                    <p className="font-['Gowun+Dodum'] text-xl md:text-2xl text-gray-800 leading-relaxed type-animation">
+                        {displayedText}
+                        <span className="animate-pulse inline-block ml-1 font-bold">|</span>
+                    </p>
+
+                    {/* Next Indicator */}
+                    {!isTyping && (
+                        <div className="absolute bottom-4 right-6 animate-bounce text-orange-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
 };
-
-const styles = {
-    container: {
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        backgroundColor: 'rgba(0,0,0,0.8)', // Darken background
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-        overflow: 'hidden',
-        cursor: 'pointer',
-    },
-    spriteParams: {
-        position: 'absolute',
-        bottom: '0',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        height: '80%',
-        display: 'flex',
-        alignItems: 'flex-end',
-    },
-    sprite: {
-        height: '100%',
-        objectFit: 'contain',
-        filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))',
-    },
-    dialogueBox: {
-        position: 'relative',
-        height: '150px',
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        borderTop: '2px solid #fff',
-        padding: '20px',
-        margin: '0',
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
-    },
-    nameTag: {
-        fontSize: '1.2rem',
-        fontWeight: 'bold',
-        color: '#f0bc5e', // Gold
-        marginBottom: '10px',
-    },
-    text: {
-        fontSize: '1rem',
-        color: '#fff',
-        lineHeight: '1.5',
-    },
-    indicator: {
-        position: 'absolute',
-        bottom: '10px',
-        right: '20px',
-        color: '#fff',
-        animation: 'bounce 1s infinite',
-    }
-};
-
-// CSS for bounce animation
-const styleSheet = document.createElement("style");
-styleSheet.innerText += `
-  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
-`;
-document.head.appendChild(styleSheet);
 
 export default StoryMode;
