@@ -88,78 +88,72 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center h-full w-full bg-gradient-to-b from-yellow-300 to-orange-400 p-4 font-['Jua']">
+        <div className="flex flex-col items-center justify-center h-full w-full p-4 font-body relative z-10">
 
-            {/* Logo Area */}
-            <div className={`transform transition-all duration-1000 ${animate ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-[-50px] opacity-0 scale-90'}`}>
-                <h1 className="text-6xl md:text-8xl font-black text-white drop-shadow-[0_5px_5px_rgba(0,0,0,0.2)] tracking-tighter mb-2 animate-bounce select-none">
-                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-cyan-500 transform -rotate-6">W</span>
-                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-pink-500 transform rotate-3">E</span>
-                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-yellow-300 transform -rotate-3">D</span>
-                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-green-400 transform rotate-6">D</span>
-                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-purple-400 transform -rotate-2">I</span>
-                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-red-400 transform rotate-4">N</span>
-                    <span className="inline-block hover:scale-110 transition-transform cursor-pointer text-blue-400 transform -rotate-3">G</span>
-                </h1>
-                <p className="text-white text-xl md:text-2xl font-bold text-center drop-shadow-md bg-black/20 rounded-full px-6 py-2 mx-auto w-fit backdrop-blur-sm">
-                    Is Coming!
-                </p>
-            </div>
+            {/* Glass Card Container */}
+            <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 md:p-12 shadow-soft-xl border border-white/60 flex flex-col items-center justify-center max-w-lg w-full transition-all duration-700 ease-out transform"
+                style={{ opacity: animate ? 1 : 0, transform: animate ? 'translateY(0)' : 'translateY(20px)' }}>
 
-            {/* Character Placeholder */}
-            <div className="my-8 relative group cursor-pointer">
-                <div className="w-32 h-32 bg-white rounded-full border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] flex items-center justify-center text-4xl overflow-hidden transform transition-transform group-hover:scale-110 group-active:scale-95 duration-200">
-                    👰🤵
+                {/* Logo Area */}
+                <div className="mb-8 text-center">
+                    <h1 className="text-6xl md:text-8xl font-heading text-primary drop-shadow-sm tracking-wide mb-4 animate-fade-in-up">
+                        Wedding
+                    </h1>
+                    <p className="text-text/80 text-xl font-medium tracking-widest uppercase border-b border-primary/20 pb-2 inline-block">
+                        Invitation
+                    </p>
                 </div>
-            </div>
 
-            <div className="flex flex-col items-center gap-4 mb-8 w-full max-w-xs">
-                {/* Input & Button - Always Visible */}
-                {!loading ? (
-                    <>
-                        <div className="relative w-full">
-                            <input
-                                type="text"
-                                placeholder="하객명(닉네임) 입력"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
-                                className="w-full h-14 pl-12 pr-4 rounded-xl border-4 border-black text-xl font-bold focus:outline-none focus:ring-4 focus:ring-blue-300 shadow-md placeholder:text-gray-300"
-                                maxLength={8}
-                                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                                autoFocus
-                            />
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">🏷️</span>
-                        </div>
-
-                        <button
-                            onClick={handleLogin}
-                            className="group relative w-full bg-[#22D3EE] border-4 border-black px-8 py-4 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[6px] active:translate-y-[6px] transition-all duration-100"
-                        >
-                            <div className="flex items-center justify-center gap-2">
-                                <span className="text-2xl">🚀</span>
-                                <span className="block text-2xl font-black text-white">
-                                    입장하기
-                                </span>
-                            </div>
-                        </button>
-                    </>
-                ) : (
-                    /* Loading State */
-                    <div className="bg-black/20 px-6 py-4 rounded-2xl backdrop-blur-sm border-2 border-white/30 w-full animate-in zoom-in duration-300">
-                        <p className="text-white font-black text-center text-lg break-keep leading-relaxed drop-shadow-md animate-pulse">
-                            {loadingText}
-                        </p>
+                {/* Character/Icon Placeholder */}
+                <div className="my-6 relative group cursor-pointer">
+                    <div className="w-24 h-24 bg-gradient-to-br from-white to-soft-pink rounded-full shadow-soft-md flex items-center justify-center text-4xl overflow-hidden transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-soft-lg border border-white/50">
+                        🕊️
                     </div>
-                )}
-            </div>
+                </div>
 
-            {/* Switch Mode */}
-            <button
-                onClick={onSwitchToV1}
-                className="text-white/80 font-bold underline hover:text-white transition-colors text-sm"
-            >
-                Back to Classic Mode
-            </button>
+                <div className="flex flex-col items-center gap-4 w-full">
+                    {/* Input & Button - Always Visible */}
+                    {!loading ? (
+                        <>
+                            <div className="relative w-full group">
+                                <input
+                                    type="text"
+                                    placeholder="성함을 입력해주세요"
+                                    value={nickname}
+                                    onChange={(e) => setNickname(e.target.value)}
+                                    className="w-full h-14 pl-4 pr-4 rounded-xl border border-secondary/30 bg-white/50 text-center text-lg text-text font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400/70"
+                                    maxLength={8}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                                    autoFocus
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleLogin}
+                                className="w-full bg-cta text-white h-14 rounded-xl font-semibold text-lg shadow-soft-md hover:shadow-soft-lg hover:opacity-95 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 group"
+                            >
+                                <span>입장하기</span>
+                                <span className="group-hover:translate-x-1 transition-transform">→</span>
+                            </button>
+                        </>
+                    ) : (
+                        /* Loading State */
+                        <div className="w-full bg-white/60 px-6 py-6 rounded-xl border border-white/50 animate-pulse text-center">
+                            <p className="text-primary font-medium text-lg">
+                                {loadingText}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Switch Mode */}
+                <button
+                    onClick={onSwitchToV1}
+                    className="mt-8 text-text/60 text-sm hover:text-primary transition-colors border-b border-transparent hover:border-primary/30 pb-0.5"
+                >
+                    Back to Classic Mode
+                </button>
+            </div>
         </div>
     );
 };

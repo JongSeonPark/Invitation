@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
@@ -12,26 +12,36 @@ module.exports = {
                 cta: '#F97316',
                 background: '#FAF5FF',
                 text: '#4C1D95',
-                'soft-pink': '#FFD6E0',
+                'soft-pink': '#FFD6E0', // Kept as requested in Master file notes
             },
             fontFamily: {
                 heading: ['"Great Vibes"', 'cursive'],
                 body: ['"Cormorant Infant"', 'serif'],
+                classic: ['"Gowun Batang"', 'serif'],
             },
             boxShadow: {
-                'soft-sm': '0 1px 2px rgba(0,0,0,0.05)',
-                'soft-md': '0 4px 6px rgba(0,0,0,0.1)',
-                'soft-lg': '0 10px 15px rgba(0,0,0,0.1)',
-                'soft-xl': '0 20px 25px rgba(0,0,0,0.15)',
+                'soft-sm': 'var(--shadow-sm)',
+                'soft-md': 'var(--shadow-md)',
+                'soft-lg': 'var(--shadow-lg)',
+                'soft-xl': 'var(--shadow-xl)',
             },
             spacing: {
-                'xs': '4px',
-                'sm': '8px',
-                'md': '16px',
-                'lg': '24px',
-                'xl': '32px',
-                '2xl': '48px',
-                '3xl': '64px',
+                'xs': 'var(--space-xs)',
+                'sm': 'var(--space-sm)',
+                'md': 'var(--space-md)',
+                'lg': 'var(--space-lg)',
+                'xl': 'var(--space-xl)',
+                '2xl': 'var(--space-2xl)',
+                '3xl': 'var(--space-3xl)',
+            },
+            keyframes: {
+                'fade-in-up': {
+                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                }
+            },
+            animation: {
+                'fade-in-up': 'fade-in-up 0.5s ease-out',
             }
         },
     },

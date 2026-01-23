@@ -3,13 +3,13 @@ const Info = () => {
         <section style={styles.section}>
             <div style={styles.container}>
                 <div style={styles.item}>
-                    <h3 style={styles.label}>DATE</h3>
-                    <p style={styles.value}>2026. 04. 25</p>
-                    <p style={styles.subValue}>SATURDAY 04:50 PM</p>
+                    <h3 style={styles.label}>일시</h3>
+                    <p style={styles.value}>2026년 4월 25일</p>
+                    <p style={styles.subValue}>토요일 오후 4시 50분</p>
                 </div>
                 <div style={styles.divider}></div>
                 <div style={styles.item}>
-                    <h3 style={styles.label}>LOCATION</h3>
+                    <h3 style={styles.label}>장소</h3>
                     <p style={styles.value}>빌라드 지디 안산</p>
                     <p style={styles.subValue}>경기 안산시 단원구 광덕4로 140</p>
                 </div>

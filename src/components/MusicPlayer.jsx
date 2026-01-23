@@ -38,7 +38,7 @@ const MusicPlayer = () => {
                 loop
             />
             <button onClick={togglePlay} style={styles.button}>
-                {isPlaying ? '🎵 ON' : '🔇 OFF'}
+                {isPlaying ? '🎵 끄기' : '🔇 켜기'}
             </button>
         </div>
     );
@@ -62,7 +62,7 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         gap: '5px',
-        fontFamily: 'var(--font-serif)',
+        fontFamily: "'Gowun Batang', serif",
     }
 };
 

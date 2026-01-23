@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 // Vite의 기능을 이용해 images 폴더의 모든 jpg/png 파일을 자동으로 가져옵니다.
 const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
@@ -6,25 +6,11 @@ const images = Object.values(imageModules).map(module => module.default);
 
 const Gallery = ({ forceUnlock = false }) => {
     const [selectedImage, setSelectedImage] = useState(null);
-    const scrollRef = useRef(null);
 
     // 이미지가 없을 경우를 대비한 방어 코드
     if (images.length === 0) {
         return null;
     }
-
-    useEffect(() => {
-        const el = scrollRef.current;
-        if (el) {
-            const onWheel = (e) => {
-                if (e.deltaY === 0) return;
-                e.preventDefault();
-                el.scrollLeft += e.deltaY;
-            };
-            el.addEventListener('wheel', onWheel);
-            return () => el.removeEventListener('wheel', onWheel);
-        }
-    }, []);
 
     // Load collection status
     const [unlockedIndices, setUnlockedIndices] = useState([]);
@@ -57,40 +43,62 @@ const Gallery = ({ forceUnlock = false }) => {
     }, [images, forceUnlock]); // trigger on mount
 
     return (
-        <section id="gallery" className="py-20 bg-white text-center overflow-hidden">
-            <h2 className="text-sm text-primary tracking-[0.2em] font-bold mb-8 uppercase">
-                GALLERY {forceUnlock ? '' : `(${unlockedIndices.length}/${images.length})`}
-            </h2>
+        <section id="gallery" className="py-20 bg-background relative overflow-hidden">
+            {/* Background elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-10 right-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-10 left-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+            </div>
 
-            <div
-                ref={scrollRef}
-                className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-8 pb-8 scrollbar-hide"
-            >
-                {images.map((src, index) => {
-                    const isUnlocked = forceUnlock || unlockedIndices.includes(index);
-                    return (
-                        <div
-                            key={index}
-                            className="relative flex-none w-[85vw] md:w-[600px] snap-center rounded-xl overflow-hidden shadow-soft-md transition-transform hover:scale-[1.02] duration-300"
-                            onClick={() => isUnlocked && setSelectedImage(src)}
-                        >
-                            <div className="w-full aspect-[3/4] md:aspect-[16/9]">
-                                <img
-                                    src={src}
-                                    alt={`Gallery ${index + 1}`}
-                                    className={`w-full h-full object-cover transition-all duration-500 ${isUnlocked ? 'cursor-pointer hover:brightness-110' : 'blur-xl grayscale cursor-not-allowed'}`}
-                                />
-                            </div>
+            <div className="container mx-auto px-4 relative z-10">
+                <h2 className="text-3xl md:text-4xl text-primary font-classic font-bold mb-4 text-center animate-fade-in-up">
+                    우리의 순간
+                </h2>
+                <p className="text-text/60 text-center font-body mb-12 tracking-widest uppercase text-sm animate-fade-in-up delay-100 font-classic">
+                    소중한 추억 {forceUnlock ? '' : `(${unlockedIndices.length}/${images.length})`}
+                </p>
 
-                            {!isUnlocked && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white z-10 backdrop-blur-sm">
-                                    <span className="text-4xl mb-2">🔒</span>
-                                    <span className="text-sm font-medium tracking-wider">LOCKED</span>
+                <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
+                    {images.map((src, index) => {
+                        const isUnlocked = forceUnlock || unlockedIndices.includes(index);
+                        return (
+                            <div
+                                key={index}
+                                className="break-inside-avoid group relative rounded-2xl overflow-hidden shadow-soft-md hover:shadow-soft-xl transition-all duration-500 hover:-translate-y-1 bg-white"
+                                onClick={() => isUnlocked && setSelectedImage(src)}
+                            >
+                                <div className="relative overflow-hidden">
+                                    <img
+                                        src={src}
+                                        alt={`Gallery ${index + 1}`}
+                                        className={`w-full h-auto object-cover transition-all duration-700 
+                                            ${isUnlocked
+                                                ? 'cursor-pointer hover:scale-105 filter brightness-100'
+                                                : 'blur-xl grayscale contrast-125 cursor-not-allowed opacity-50'
+                                            }
+                                        `}
+                                        loading="lazy"
+                                    />
+
+                                    {/* Overlay for Unlocked Images */}
+                                    {isUnlocked && (
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
+                                    )}
+
+                                    {/* Lock Overlay */}
+                                    {!isUnlocked && (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 z-10 backdrop-blur-[2px]">
+                                            <div className="bg-white/90 backdrop-blur-md p-4 rounded-full shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                                                <span className="text-2xl">🔒</span>
+                                            </div>
+                                            <span className="text-white font-bold tracking-widest mt-2 drop-shadow-md text-xs uppercase bg-black/20 px-3 py-1 rounded-full">Locked</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    );
-                })}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {selectedImage && (

@@ -43,77 +43,54 @@ const Recruit = () => {
     };
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-[#FCD34D] relative overflow-hidden font-['Jua'] p-4">
-            {/* Background Pattern (Sunburst) */}
-            <div className="absolute inset-0 z-0 opacity-30 pointer-events-none"
-                style={{
-                    background: 'repeating-conic-gradient(#F59E0B 0deg 15deg, transparent 15deg 30deg)'
-                }}
-            ></div>
+        <div className="w-full h-full flex flex-col items-center justify-center bg-background relative overflow-hidden font-body p-4 select-none">
+            {/* Background Pattern */}
+            <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+            <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-secondary/10 rounded-full blur-[120px] animate-pulse delay-1000 pointer-events-none"></div>
 
             {!result && !isAnimating && (
-                <div className="z-10 flex flex-col items-center w-full max-w-sm animate-in zoom-in duration-300">
-                    <div className="mb-8 text-center bg-white border-4 border-black px-8 py-4 rounded-[2rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transform -rotate-2">
-                        <h2 className="text-3xl font-black text-black m-0">📷 사진 뽑기</h2>
-                        <p className="text-gray-500 font-bold mt-1 text-sm">오늘의 운세는 과연?</p>
+                <div className="z-10 flex flex-col items-center w-full max-w-sm animate-in zoom-in duration-500">
+                    <div className="mb-8 text-center bg-white/50 backdrop-blur-md border border-white/60 px-8 py-6 rounded-[2.5rem] shadow-soft-lg">
+                        <h2 className="text-3xl font-heading text-primary mb-2">Collect Memories</h2>
+                        <p className="text-text/60 font-body text-lg">Discover a special moment</p>
                     </div>
 
                     <button
                         onClick={handleRecruit}
-                        className="group relative w-64 h-24 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-full border-[6px] border-black shadow-[0px_8px_0px_0px_#1E40AF,0px_15px_10px_rgba(0,0,0,0.4)] active:translate-y-[8px] active:shadow-[0px_0px_0px_0px_#1E40AF] transition-all"
+                        className="group relative w-24 h-24 bg-gradient-to-br from-white to-gray-50 text-primary rounded-full shadow-soft-xl hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center border border-white/60"
+                        title="Open Memory"
                     >
-                        <div className="flex items-center justify-center gap-3">
-                            <span className="text-4xl filter drop-shadow animate-bounce">💎</span>
-                            <span className="text-3xl font-black tracking-widest">1회 소환</span>
-                        </div>
-                        {/* Shine Effect */}
-                        <div className="absolute top-2 left-4 w-56 h-8 bg-white opacity-20 rounded-full"></div>
+                        <span className="text-4xl group-hover:rotate-12 transition-transform duration-300">📷</span>
+                        <div className="absolute inset-0 rounded-full bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
 
-                    <p className="mt-10 text-sm font-bold text-black/60 bg-white/50 px-4 py-1 rounded-full border border-black/10">
-                        * 중복 획득 시 마일리지가...는 없습니다.
+                    <p className="mt-8 text-sm text-text/40 font-body tracking-widest uppercase">
+                        Tap camera to collect
                     </p>
                 </div>
             )}
 
             {isAnimating && (
                 <div className="z-10 flex flex-col items-center justify-center animate-pulse">
-                    <div className="text-8xl mb-4 animate-[bounce_0.5s_infinite]">✉️</div>
-                    <p className="text-2xl font-black text-black">두근두근...</p>
+                    <div className="text-6xl mb-4 animate-[bounce_1s_infinite]">🌸</div>
+                    <p className="text-2xl font-heading text-primary">Developing...</p>
                 </div>
             )}
 
             {/* Result Overlay */}
             {result && !isAnimating && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ fontFamily: 'Jua' }}>
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 font-body">
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setResult(null)}></div>
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => setResult(null)}></div>
 
                     {/* Card Container */}
                     <div className="relative z-10 flex flex-col items-center animate-in zoom-in duration-500">
-                        {/* Glow Effect behind card */}
-                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-${rarity === 'SSR' ? 'yellow' : rarity === 'SR' ? 'pink' : 'blue'}-500 blur-3xl opacity-50 rounded-full animate-pulse`}></div>
-
                         {/* Polaroid Frame */}
-                        <div className="bg-white p-4 pb-12 rounded-lg shadow-2xl transform rotate-1 border-4 border-gray-200 max-w-[90vw] max-h-[70vh] flex flex-col items-center">
-                            {/* Rarity & New Badge */}
-                            <div className="absolute -top-6 -left-6 z-20">
-                                <span className={`
-                                    inline-block px-4 py-2 rounded-full border-4 border-black text-white font-black text-xl shadow-lg transform -rotate-12
-                                    ${rarity === 'SSR' ? 'bg-[#F59E0B]' : rarity === 'SR' ? 'bg-[#EC4899]' : 'bg-[#3B82F6]'}
-                                `}>
-                                    {rarity} RANK
-                                </span>
-                            </div>
+                        <div className="bg-white p-4 pb-16 rounded shadow-2xl transform rotate-1 border border-gray-100 max-w-[90vw] max-h-[70vh] flex flex-col items-center relative transition-transform hover:rotate-0 duration-300">
+                            <img src={result} alt="Result" className="w-[300px] h-[300px] object-cover bg-gray-100 shadow-inner" />
 
-                            <img src={result} alt="Result" className="w-[300px] h-[300px] object-cover rounded border border-gray-100 bg-gray-100" />
-
-                            <h3 className="mt-4 text-2xl font-black text-gray-800 text-center w-full">
-                                {rarity === 'SSR' ? '✨ 전설적인 순간 ✨' : rarity === 'SR' ? '💖 달콤한 기억' : '📷 찰칵!'}
-                            </h3>
-
-                            <div className="absolute bottom-4 right-4 text-gray-400 font-serif text-sm">
-                                2026.04.25
+                            <div className="absolute bottom-6 font-handwriting text-2xl text-gray-600 rotate-[-2deg]">
+                                {rarity === 'SSR' ? 'Unforgettable Moment' : 'Lovely Day'}
                             </div>
                         </div>
 
@@ -121,15 +98,15 @@ const Recruit = () => {
                         <div className="flex gap-4 mt-8">
                             <button
                                 onClick={() => setResult(null)}
-                                className="px-8 py-3 bg-gray-600 text-white rounded-full font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all"
+                                className="px-8 py-3 bg-white/80 backdrop-blur text-text rounded-full font-medium border border-white/60 shadow-soft-md hover:bg-white transition-all"
                             >
-                                닫기
+                                Close
                             </button>
                             <button
                                 onClick={handleRecruit}
-                                className="px-8 py-3 bg-[#3B82F6] text-white rounded-full font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                className="px-8 py-3 bg-primary text-white rounded-full font-medium shadow-soft-lg hover:bg-primary/90 hover:scale-105 transition-all flex items-center gap-2"
                             >
-                                <span>💎</span> 다시 뽑기
+                                <span>📷</span> One More
                             </button>
                         </div>
                     </div>

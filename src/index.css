@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Infant:wght@300;400;500;600;700&family=Great+Vibes&family=Gowun+Batang:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-background text-text font-body antialiased;
+    @apply bg-background text-text font-body antialiased selection:bg-primary/20 selection:text-primary;
   }
 
   h1,

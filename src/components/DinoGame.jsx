@@ -381,44 +381,43 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     };
 
     return (
-        <div className="relative w-full max-w-3xl aspect-[2/1] bg-white rounded-3xl overflow-hidden shadow-2xl border-4 border-black font-['Jua'] select-none cursor-pointer group" onClick={handleAction}>
+        <div
+            onClick={handleAction}
+            className="relative w-full max-w-4xl mx-auto aspect-[2/1] bg-white/50 backdrop-blur-md rounded-[2.5rem] overflow-hidden shadow-soft-xl border border-white/60 font-body select-none cursor-pointer group hover:shadow-soft-2xl transition-all duration-500 hover:-translate-y-1"
+        >
             <canvas
                 ref={canvasRef}
                 width={800}
                 height={400}
-                className="w-full h-full block"
+                className="w-full h-full block rounded-[2rem]"
             ></canvas>
 
             {gameState === 'START' && (
-                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center backdrop-blur-sm">
-                    <h2 className="text-5xl text-white font-black drop-shadow-md mb-4 animate-bounce">WEDDING RUN</h2>
-                    <p className="text-xl text-yellow-300 mb-8 font-bold">화면을 터치해서 점프하세요!</p>
-                    <div className="bg-white text-black px-8 py-3 rounded-full font-black text-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black group-hover:scale-110 transition-transform">
-                        START
+                <div className="absolute inset-0 bg-background/40 flex flex-col items-center justify-center backdrop-blur-[2px]">
+                    <h2 className="text-5xl md:text-6xl text-primary font-heading mb-4 animate-bounce drop-shadow-sm">Wedding Run</h2>
+                    <p className="text-xl text-text/80 mb-8 font-body tracking-wider">Tap to Jump with Love!</p>
+                    <div className="bg-primary text-white px-10 py-4 rounded-full font-body font-bold text-xl shadow-soft-lg hover:bg-primary/90 hover:scale-110 transition-transform">
+                        START GAME
                     </div>
                 </div>
             )}
 
             {gameState === 'GAME_OVER' && (
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-md animate-in zoom-in duration-300">
-                    <p className="text-6xl mb-2">😭</p>
-                    <h2 className="text-4xl text-white font-black mb-2">OOPS!</h2>
-                    <div className="bg-white/90 p-6 rounded-2xl border-4 border-black text-center mb-6 shadow-lg">
-                        <p className="text-sm text-gray-500 font-bold mb-1">SCORE</p>
-                        <p className="text-5xl font-black text-orange-500">{score}</p>
+                <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center backdrop-blur-md animate-in zoom-in duration-300">
+                    <p className="text-6xl mb-4 animate-bounce">💍</p>
+                    <h2 className="text-4xl text-primary font-heading mb-2">Game Over</h2>
+                    <div className="bg-background p-6 rounded-2xl border border-white/60 shadow-inner mb-8 text-center min-w-[200px]">
+                        <p className="text-sm text-text/60 font-bold mb-2 uppercase tracking-widest">Score</p>
+                        <p className="text-5xl font-heading text-primary">{score}</p>
                     </div>
-                    <div className="bg-[#22D3EE] text-white px-8 py-3 rounded-full font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black animate-pulse">
+                    <div className="bg-secondary text-white px-8 py-3 rounded-full font-bold text-lg shadow-soft-md hover:scale-105 transition-transform animate-pulse">
                         TRY AGAIN
                     </div>
                 </div>
             )}
 
-            <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-4 py-2 rounded-full border-2 border-black font-black text-2xl shadow-md">
+            <div className="absolute top-6 right-6 bg-white/80 backdrop-blur-md px-6 py-2 rounded-full border border-white/50 font-heading text-2xl shadow-sm text-primary">
                 {score}m
-            </div>
-
-            <div className="absolute bottom-2 left-2 text-xs text-white/50 font-bold">
-                Design by Trickcal Style
             </div>
         </div>
     );

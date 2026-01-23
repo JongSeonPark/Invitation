@@ -7,8 +7,8 @@
 ---
 
 **Project:** Wedding Invitation
-**Generated:** 2026-01-22 23:18:45
-**Category:** Wedding/Event Planning
+**Generated:** 2026-01-23 21:49:04
+**Category:** Luxury/Premium Brand
 
 ---
 
@@ -153,17 +153,17 @@
 
 ## Style Guidelines
 
-**Style:** Soft UI Evolution
+**Style:** Liquid Glass
 
-**Keywords:** Evolved soft UI, better contrast, modern aesthetics, subtle depth, accessibility-focused, improved shadows, hybrid
+**Keywords:** Flowing glass, morphing, smooth transitions, fluid effects, translucent, animated blur, iridescent, chromatic aberration
 
-**Best For:** Modern enterprise apps, SaaS platforms, health/wellness, modern business tools, professional, hybrid
+**Best For:** Premium SaaS, high-end e-commerce, creative platforms, branding experiences, luxury portfolios
 
-**Key Effects:** Improved shadows (softer than flat, clearer than neumorphism), modern (200-300ms), focus visible, WCAG AA/AAA
+**Key Effects:** Morphing elements (SVG/CSS), fluid animations (400-600ms curves), dynamic blur (backdrop-filter), color transitions
 
 ### Page Pattern
 
-**Pattern Name:** Storytelling + Social Proof
+**Pattern Name:** Storytelling + Feature-Rich
 
 - **CTA Placement:** Above fold
 - **Section Order:** Hero > Features > CTA
@@ -172,8 +172,8 @@
 
 ## Anti-Patterns (Do NOT Use)
 
-- ❌ Generic templates
-- ❌ No portfolio
+- ❌ Cheap visuals
+- ❌ Fast animations
 
 ### Additional Forbidden Patterns
 

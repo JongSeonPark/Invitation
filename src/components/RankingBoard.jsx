@@ -47,76 +47,58 @@ const RankingBoard = () => {
     if (loading) return <div style={{ textAlign: 'center', padding: '20px' }}>Loading...</div>;
 
     return (
-        <div style={styles.container}>
-            <h3 style={styles.header}>🏆 TOP 10 요원</h3>
-            <table style={styles.table}>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>NICNAME</th>
-                        <th>SCORE</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rankings.map((user, index) => {
-                        // Check if this row represents the current user by ID OR Nickname match
-                        const isMe = currentUser && (
-                            currentUser.uid === user.id ||
-                            currentUser.displayName === user.displayName
-                        );
+        <div className="w-full max-w-2xl mx-auto p-6 bg-white/50 backdrop-blur-md rounded-3xl shadow-soft-lg border border-white/60 font-body">
+            <h3 className="text-2xl text-center text-primary font-heading font-medium mb-6">Hall of Fame</h3>
 
-                        return (
-                            <tr key={user.id} style={isMe ? styles.myRow : {}}>
-                                <td style={styles.cell}>{index + 1}</td>
-                                <td style={styles.cell}>
-                                    {user.displayName} {isMe && '(나)'}
-                                </td>
-                                <td style={{ ...styles.cell, fontWeight: 'bold' }}>{user.score}</td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
+            <div className="overflow-hidden rounded-2xl border border-white/50">
+                <table className="w-full text-left">
+                    <thead className="bg-white/60">
+                        <tr>
+                            <th className="p-4 text-sm font-bold text-text/70 uppercase tracking-wider text-center">#</th>
+                            <th className="p-4 text-sm font-bold text-text/70 uppercase tracking-wider">Agent</th>
+                            <th className="p-4 text-sm font-bold text-text/70 uppercase tracking-wider text-right">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/40">
+                        {rankings.map((user, index) => {
+                            const isMe = currentUser && (
+                                currentUser.uid === user.id ||
+                                currentUser.displayName === user.displayName
+                            );
 
-            <div style={styles.footer}>
-                * 랭킹은 실시간으로 반영됩니다.
+                            return (
+                                <tr
+                                    key={user.id}
+                                    className={`
+                                        transition-colors hover:bg-white/40
+                                        ${isMe ? 'bg-primary/10' : ''}
+                                        ${index < 3 ? 'font-bold' : ''}
+                                    `}
+                                >
+                                    <td className="p-4 text-center">
+                                        {index === 0 && '🥇'}
+                                        {index === 1 && '🥈'}
+                                        {index === 2 && '🥉'}
+                                        {index > 2 && index + 1}
+                                    </td>
+                                    <td className={`p-4 ${isMe ? 'text-primary' : 'text-text'}`}>
+                                        {user.displayName} {isMe && '(You)'}
+                                    </td>
+                                    <td className="p-4 text-right font-mono text-text/80">
+                                        {user.score.toLocaleString()}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className="mt-6 text-center text-xs text-text/40 tracking-widest uppercase">
+                * Real-time Updates
             </div>
         </div>
     );
-};
-
-const styles = {
-    container: {
-        padding: '10px',
-        color: '#333',
-        fontFamily: '"Rajdhani", sans-serif',
-    },
-    header: {
-        textAlign: 'center',
-        marginBottom: '15px',
-        borderBottom: '2px solid #333',
-        paddingBottom: '10px',
-    },
-    table: {
-        width: '100%',
-        borderCollapse: 'collapse',
-        fontSize: '0.9rem',
-    },
-    cell: {
-        padding: '8px',
-        borderBottom: '1px solid #ddd',
-        textAlign: 'center',
-    },
-    myRow: {
-        backgroundColor: '#fff3cd',
-        fontWeight: 'bold',
-    },
-    footer: {
-        marginTop: '20px',
-        fontSize: '0.8rem',
-        color: '#888',
-        textAlign: 'center',
-    }
 };
 
 export default RankingBoard;

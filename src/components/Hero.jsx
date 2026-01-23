@@ -23,24 +23,24 @@ const Hero = () => {
             <div
                 className={`relative z-20 p-8 transition-all duration-1000 ease-out transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
             >
-                <p className="text-sm md:text-base tracking-[0.2em] mb-4 uppercase text-white/90">
-                    We Are Getting Married
+                <p className="text-base md:text-lg tracking-[0.2em] mb-4 text-white/90 font-classic">
+                    소중한 분들을 초대합니다
                 </p>
-                <h1 className="text-6xl md:text-7xl lg:text-8xl mb-6 font-heading text-white drop-shadow-lg">
-                    JongSeon <br className="md:hidden" />
-                    <span className="text-4xl md:text-5xl lg:text-6xl mx-2 text-soft-pink font-serif italic">&</span>
-                    <br className="md:hidden" /> Jisu
+                <h1 className="text-5xl md:text-6xl lg:text-7xl mb-8 font-classic font-bold text-white drop-shadow-lg leading-tight">
+                    박종선 <br className="md:hidden" />
+                    <span className="text-3xl md:text-4xl lg:text-5xl mx-2 text-soft-pink font-serif italic">&</span>
+                    <br className="md:hidden" /> 윤지수
                 </h1>
-                <div className="flex items-center justify-center gap-4 text-white/90">
+                <div className="flex items-center justify-center gap-4 text-white/90 font-classic">
                     <div className="h-px w-12 bg-white/60"></div>
-                    <p className="text-lg md:text-xl tracking-widest font-light">2026. 04. 25. SAT</p>
+                    <p className="text-xl md:text-2xl tracking-widest font-light">2026년 4월 25일 토요일 오후 4시 50분</p>
                     <div className="h-px w-12 bg-white/60"></div>
                 </div>
             </div>
 
             {/* Scroll Indicator */}
-            <div className="absolute bottom-8 z-20 animate-bounce text-white/80 text-sm tracking-widest">
-                SCROLL DOWN
+            <div className="absolute bottom-8 z-20 animate-bounce text-white/80 text-sm tracking-widest font-classic">
+                아래로 내려주세요
             </div>
         </section>
     );

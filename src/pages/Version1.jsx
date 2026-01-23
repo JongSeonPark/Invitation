@@ -4,20 +4,18 @@ import Info from '../components/Info';
 import Gallery from '../components/Gallery';
 import VideoPlayer from '../components/VideoPlayer';
 import Location from '../components/Location';
-import DinoGame from '../components/DinoGame';
 import MusicPlayer from '../components/MusicPlayer';
-import CoupleCards from '../components/CoupleCards';
+import AccountSection from '../components/AccountSection';
 
 const Version1 = () => {
     return (
-        <div className="app-container">
+        <div className="app-container font-classic">
             <Hero />
             <InvitationText />
             <Info />
             <Gallery forceUnlock={true} />
             <VideoPlayer />
-            <DinoGame />
-            <CoupleCards />
+            <AccountSection />
             <MusicPlayer />
             <Location />
         </div>
