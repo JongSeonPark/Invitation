@@ -51,40 +51,39 @@ const StoryMode = ({ onClose }) => {
 
     return (
         <div
-            className="w-full h-full relative flex flex-col justify-end overflow-hidden cursor-pointer min-h-[500px]"
+            className="w-full h-full relative flex flex-col justify-end overflow-hidden cursor-pointer min-h-[500px] bg-sky-200/20"
             onClick={handleNext}
         >
-            {/* Character Sprite Area - Pop Up Animation */}
-            {/* Adjusted position to be higher up */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[80%] flex items-end transition-transform duration-300">
+            {/* Character Sprite Area */}
+            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 h-[60%] flex items-end transition-transform duration-300">
                 <img
                     src={currentLine.image === 'groom' ? groomImg : brideImg}
                     alt="Character"
-                    className="h-full object-contain filter drop-shadow-lg animate-in slide-in-from-bottom-10 fade-in duration-300"
+                    className="h-full object-contain drop-shadow-[4px_4px_0_rgba(0,0,0,0.3)]"
                     key={currentIndex}
                 />
             </div>
 
-            {/* Dialogue Box - Larger & visual novel style */}
-            <div className="relative z-10 m-4 mb-8">
-                {/* Name Tag */}
-                <div className="absolute -top-7 left-8 bg-[#EF4444] text-white font-['Jua'] px-8 py-2 rounded-t-xl rounded-br-xl border-2 border-black shadow-md transform -skew-x-6 origin-bottom-left z-20">
-                    <span className="text-2xl inline-block transform skew-x-6 drop-shadow-sm">{currentLine.speaker}</span>
+            {/* Retro Dialogue Box */}
+            <div className="relative z-10 m-4 mb-6">
+                {/* Name Tag - Pixel Style */}
+                <div className="absolute -top-10 left-0 bg-blue-600 border-4 border-black border-b-0 px-6 py-2">
+                    <span className="text-white font-['Silkscreen'] text-xl tracking-wider uppercase drop-shadow-md">
+                        {currentLine.speaker}
+                    </span>
                 </div>
 
                 {/* Text Area */}
-                <div className="bg-white/95 backdrop-blur border-4 border-black rounded-3xl p-8 shadow-xl min-h-[200px] relative">
-                    <p className="font-['Gowun+Dodum'] text-xl md:text-2xl text-gray-800 leading-relaxed type-animation">
+                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0_rgba(0,0,0,0.5)] min-h-[160px] relative">
+                    <p className="font-['Silkscreen'] text-xl md:text-2xl text-black leading-relaxed tracking-wide">
                         {displayedText}
-                        <span className="animate-pulse inline-block ml-1 font-bold">|</span>
+                        {isTyping && <span className="animate-blink inline-block ml-1 w-3 h-5 bg-black align-middle"></span>}
                     </p>
 
-                    {/* Next Indicator */}
+                    {/* Next Indicator (Blinking Triangle) */}
                     {!isTyping && (
-                        <div className="absolute bottom-4 right-6 animate-bounce text-orange-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
+                        <div className="absolute bottom-4 right-4 animate-bounce">
+                            <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[15px] border-t-red-500"></div>
                         </div>
                     )}
                 </div>

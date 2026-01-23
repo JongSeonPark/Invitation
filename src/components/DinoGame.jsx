@@ -2,105 +2,110 @@ import { useEffect, useRef, useState } from 'react';
 import groomSprites from '../assets/sprites/groom_sprites.png';
 import brideSprites from '../assets/sprites/bride_sprites.png';
 import { auth, db } from '../firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { checkAchievement } from '../utils/achievementManager';
+import { audioManager } from '../utils/audioManager';
 
 const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const canvasRef = useRef(null);
-    const [gameState, setGameState] = useState('START'); // START, PLAYING, GAME_OVER
+    const [gameState, setGameState] = useState('START'); // START, PLAYING, GAME_OVER, CLEAR
     const [score, setScore] = useState(0);
+    const [time, setTime] = useState(0);
     const [character, setCharacter] = useState(selectedCharacter);
-    const [savedHighScore, setSavedHighScore] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
-
-    useEffect(() => {
-        setCharacter(selectedCharacter);
-    }, [selectedCharacter]);
+    const timerRef = useRef(null);
 
     // Load Images
     const groomSheet = useRef(new Image());
     const brideSheet = useRef(new Image());
+    const bgImage = useRef(new Image());
 
     useEffect(() => {
         let loaded = 0;
-        const totalImages = 2;
+        const totalImages = 3;
 
-        const processImage = (imgSrc) => {
+        const checkLoaded = () => {
+            loaded++;
+            if (loaded >= totalImages) setImagesLoaded(true);
+        };
+
+        const bg = new Image();
+        bg.src = new URL('../assets/pixel_castle_bg.png', import.meta.url).href;
+        bg.onload = () => {
+            bgImage.current = bg;
+            checkLoaded();
+        };
+
+        // Targeted transparency for White Background (255, 255, 255)
+        const processImage = (src) => {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
+                img.src = src;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     canvas.width = img.width;
                     canvas.height = img.height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0);
+
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imgData.data;
-                    const bgR = data[0], bgG = data[1], bgB = data[2];
-                    const tolerance = 30;
+
                     for (let i = 0; i < data.length; i += 4) {
-                        if (Math.abs(data[i] - bgR) < tolerance && Math.abs(data[i + 1] - bgG) < tolerance && Math.abs(data[i + 2] - bgB) < tolerance) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+
+                        // If pixel is white (or very close), make it transparent
+                        if (r > 240 && g > 240 && b > 240) {
                             data[i + 3] = 0;
                         }
                     }
+
                     ctx.putImageData(imgData, 0, 0);
-                    const processedImg = new Image();
-                    processedImg.onload = () => resolve(processedImg);
-                    processedImg.src = canvas.toDataURL();
+                    const processed = new Image();
+                    processed.onload = () => resolve(processed);
+                    processed.src = canvas.toDataURL();
                 };
-                img.src = imgSrc;
             });
         };
 
-        const loadContent = async () => {
-            const assignRef = async (ref, src) => {
-                const processed = await processImage(src);
-                ref.current = processed;
-                loaded++;
-                if (loaded >= totalImages) setImagesLoaded(true);
-            };
-            await Promise.all([
-                assignRef(groomSheet, groomSprites),
-                assignRef(brideSheet, brideSprites)
-            ]);
+        const loadSprite = async (ref, src) => {
+            const processed = await processImage(src);
+            ref.current = processed;
+            checkLoaded();
         };
-        loadContent();
+
+        loadSprite(groomSheet, groomSprites);
+        loadSprite(brideSheet, brideSprites);
+
     }, []);
 
     // Game Constants
     const CANVAS_WIDTH = 800;
     const CANVAS_HEIGHT = 400;
     const GROUND_HEIGHT = 50;
+    const CLEAR_SCORE = 2026;
 
-    // Config
-    const BASE_SIZE = 160;   // Increased from 130 to 160 (approx 1.2x)
-    const Y_OFFSET = 40;     // Push down deeper to fix visuals (30 -> 40)
-
-    // Initial State Calculation
-    const getInitialDinoState = () => ({
-        x: 50,
-        y: CANVAS_HEIGHT - GROUND_HEIGHT - BASE_SIZE,
-        w: BASE_SIZE,
-        h: BASE_SIZE,
-        dy: 0,
-        grounded: true,
-        rotation: 0
-    });
+    const BASE_SIZE = 160;
+    const Y_OFFSET = 40;
 
     const gameData = useRef({
-        dino: getInitialDinoState(), // Correct reset from start
+        dino: { x: 50, y: 0, w: 0, h: 0, dy: 0, grounded: true },
+        items: [],
         obstacles: [],
         clouds: [],
         particles: [],
+        fireworks: [],
         frame: 0,
         bgOffset: 0,
         isGameOver: false,
+        isGameClear: false,
         animationId: null
     });
 
     const resetGame = () => {
-        // Recalculate aspect ratio logic
         const currentH = BASE_SIZE;
         let currentW = BASE_SIZE;
 
@@ -119,42 +124,56 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 w: currentW,
                 h: currentH,
                 dy: 0,
-                grounded: true,
-                rotation: 0
+                grounded: true
             },
+            items: [],
             obstacles: [],
             clouds: [],
             particles: [],
+            fireworks: [],
             frame: 0,
             bgOffset: 0,
             isGameOver: false,
-            animationId: null
+            isGameClear: false,
+            animationId: null,
+            speed: 8, // Initial speed
+            spawnRate: 100 // Initial spawn rate (frames)
         };
         setScore(0);
-
-        for (let i = 0; i < 5; i++) {
-            gameData.current.clouds.push({
-                x: Math.random() * CANVAS_WIDTH,
-                y: Math.random() * (CANVAS_HEIGHT / 2),
-                speed: 0.5 + Math.random() * 1
-            });
-        }
+        setTime(0);
     };
 
     const jump = () => {
         if (gameData.current.dino.grounded) {
-            gameData.current.dino.dy = -18; // Stronger jump for bigger body
+            audioManager.playJump();
+            gameData.current.dino.dy = -18;
             gameData.current.dino.grounded = false;
 
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 5; i++) {
                 gameData.current.particles.push({
                     x: gameData.current.dino.x + (gameData.current.dino.w / 2),
                     y: gameData.current.dino.y + gameData.current.dino.h + Y_OFFSET,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 4,
-                    life: 25
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 2,
+                    life: 20,
+                    color: '#fff'
                 });
             }
+        }
+    };
+
+    const createFirework = (x, y) => {
+        const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 5 + 2;
+            gameData.current.fireworks.push({
+                x: x, y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 60, color: color
+            });
         }
     };
 
@@ -169,8 +188,6 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 score: finalScore,
                 timestamp: serverTimestamp()
             }, { merge: true });
-
-            if (finalScore > savedHighScore) setSavedHighScore(finalScore);
         } catch (error) {
             console.error(error);
         }
@@ -183,195 +200,210 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
 
         let lastTime = performance.now();
 
+        // Start Timer if Playing
+        if (gameState === 'PLAYING') {
+            if (timerRef.current) clearInterval(timerRef.current);
+            timerRef.current = setInterval(() => {
+                setTime(prev => prev + 1);
+            }, 1000);
+        }
+
         const loop = (time) => {
             if (gameState !== 'PLAYING') return;
             const dt = Math.min((time - lastTime) / 16, 2);
             lastTime = time;
 
             const data = gameData.current;
-            data.frame++;
-            data.bgOffset += 2 * dt;
 
-            // Score
-            if (data.frame % 5 === 0) setScore(Math.floor(data.frame / 5));
+            if (!data.isGameClear && !data.isGameOver) {
+                data.frame++;
 
-            // Physics
-            data.dino.dy += 0.8 * dt;
-            data.dino.y += data.dino.dy * dt;
+                // Difficulty Scaling
+                // Speed increases every 500 frames, max 16
+                data.speed = Math.min(16, 8 + Math.floor(data.frame / 500));
+                // Spawn rate decreases (gets faster) every 300 frames, min 40
+                data.spawnRate = Math.max(40, 100 - Math.floor(data.frame / 300) * 10);
 
-            // Ground Collision
-            if (data.dino.y + data.dino.h > CANVAS_HEIGHT - GROUND_HEIGHT) {
-                data.dino.y = CANVAS_HEIGHT - GROUND_HEIGHT - data.dino.h;
-                data.dino.dy = 0;
-                data.dino.grounded = true;
-            }
+                data.bgOffset += (data.speed * 0.5) * dt;
 
-            // Obstacles
-            if (data.frame % 100 === 0) { // Slightly faster spawn
-                const types = ['🎂', '🎁', '✉️', '👰‍♀️', '🤵‍♂️'];
-                const type = types[Math.floor(Math.random() * types.length)];
-                data.obstacles.push({
-                    x: CANVAS_WIDTH,
-                    y: CANVAS_HEIGHT - GROUND_HEIGHT - 60,
-                    w: 60, // Bigger obstacles too
-                    h: 60,
-                    type: type,
-                    angle: 0
+                if (data.frame % 30 === 0) {
+                    if (score >= CLEAR_SCORE) {
+                        data.isGameClear = true;
+                        setGameState('CLEAR');
+                        checkAchievement('GAME_CLEAR');
+                        saveScore(score);
+                        audioManager.playWin();
+                        createFirework(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+                        if (timerRef.current) clearInterval(timerRef.current);
+                    }
+                }
+
+                // Physics
+                data.dino.dy += 0.8 * dt;
+                data.dino.y += data.dino.dy * dt;
+                if (data.dino.y + data.dino.h > CANVAS_HEIGHT - GROUND_HEIGHT) {
+                    data.dino.y = CANVAS_HEIGHT - GROUND_HEIGHT - data.dino.h;
+                    data.dino.dy = 0;
+                    data.dino.grounded = true;
+                }
+
+                // Spawn
+                if (data.frame % data.spawnRate === 0) {
+                    const isItem = Math.random() > 0.4;
+                    if (isItem) {
+                        const items = ['🎟️', '🍔', '✈️', '💍', '💌'];
+                        const item = items[Math.floor(Math.random() * items.length)];
+                        data.items.push({
+                            x: CANVAS_WIDTH,
+                            y: CANVAS_HEIGHT - GROUND_HEIGHT - 60 - (Math.random() * 100),
+                            w: 50, h: 50, type: item, vy: Math.sin(data.frame) * 0.5
+                        });
+                    } else {
+                        const obstacles = ['🚧', '🪨', '🔥'];
+                        const obs = obstacles[Math.floor(Math.random() * obstacles.length)];
+                        data.obstacles.push({
+                            x: CANVAS_WIDTH,
+                            y: CANVAS_HEIGHT - GROUND_HEIGHT - 50,
+                            w: 50, h: 50, type: obs
+                        });
+                    }
+                }
+
+                // Move & Filter
+                const moveObj = (obj) => {
+                    obj.x -= data.speed * dt;
+                    if (obj.vy) obj.y += Math.sin(data.frame * 0.1) * 2 * dt;
+                };
+                [...data.items, ...data.obstacles].forEach(moveObj);
+
+                data.items = data.items.filter(i => i.x + i.w > 0 && !i.collected);
+                data.obstacles = data.obstacles.filter(o => o.x + o.w > 0);
+
+                // Collision
+                const hb = 20;
+                const checkCol = (obj) =>
+                    data.dino.x + hb < obj.x + obj.w - hb &&
+                    data.dino.x + data.dino.w - hb > obj.x + hb &&
+                    data.dino.y + hb < obj.y + obj.h - hb &&
+                    data.dino.y + data.dino.h - hb > obj.y + hb;
+
+                data.items.forEach(item => {
+                    if (checkCol(item)) {
+                        item.collected = true;
+                        audioManager.playConfirm();
+                        setScore(prev => prev + 1);
+
+                        for (let i = 0; i < 5; i++) {
+                            data.particles.push({
+                                x: item.x, y: item.y,
+                                vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+                                life: 30, color: '#FFD700'
+                            });
+                        }
+                    }
                 });
+
+                data.obstacles.forEach(obs => {
+                    if (checkCol(obs)) {
+                        audioManager.playDamage();
+                        data.isGameOver = true;
+                        setGameState('GAME_OVER');
+                        if (timerRef.current) clearInterval(timerRef.current);
+                        saveScore(score);
+                    }
+                });
+
+            } else if (data.isGameClear) {
+                if (data.frame % 30 === 0) createFirework(Math.random() * CANVAS_WIDTH, Math.random() * CANVAS_HEIGHT / 2);
+                if (timerRef.current) clearInterval(timerRef.current);
             }
-
-            data.obstacles.forEach(obs => {
-                obs.x -= 7 * dt; // Faster game speed
-                obs.angle += 0.05;
-            });
-            data.obstacles = data.obstacles.filter(obs => obs.x + obs.w > 0);
-
-            // Clouds
-            data.clouds.forEach(cloud => {
-                cloud.x -= cloud.speed * dt;
-                if (cloud.x + 100 < 0) cloud.x = CANVAS_WIDTH;
-            });
 
             // Particles
             data.particles.forEach(p => {
                 p.x += p.vx * dt;
                 p.y += p.vy * dt;
                 p.life -= dt;
+                p.vy += 0.1 * dt;
+            });
+            data.fireworks.forEach(p => {
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= dt;
+                p.vy += 0.1 * dt;
             });
             data.particles = data.particles.filter(p => p.life > 0);
-
-            // Collision
-            const hitboxPadding = 20;
-            let collided = false;
-            data.obstacles.forEach(obs => {
-                if (
-                    data.dino.x + hitboxPadding < obs.x + obs.w - hitboxPadding &&
-                    data.dino.x + data.dino.w - hitboxPadding > obs.x + hitboxPadding &&
-                    data.dino.y + hitboxPadding < obs.y + obs.h - hitboxPadding &&
-                    // Check logic with Visual Offset in mind? 
-                    // No, logic uses 'y', drawing uses 'y + offset'. 
-                    // Ground collision uses 'y'. So physics is consistent.
-                    data.dino.y + data.dino.h - hitboxPadding > obs.y + hitboxPadding
-                ) {
-                    collided = true;
-                }
-            });
-
-            if (collided) {
-                setGameState('GAME_OVER');
-                data.isGameOver = true;
-                saveScore(Math.floor(data.frame / 5));
-                checkAchievement('GAME_SCORE', Math.floor(data.frame / 5));
-            }
+            data.fireworks = data.fireworks.filter(p => p.life > 0);
 
             draw(ctx);
 
-            if (!data.isGameOver) {
-                data.animationId = requestAnimationFrame(loop);
+            if (gameState === 'PLAYING' || gameState === 'CLEAR') {
+                gameData.current.animationId = requestAnimationFrame(loop);
             }
         };
 
         const draw = (ctx) => {
             const data = gameData.current;
 
-            // Sky
-            const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-            gradient.addColorStop(0, '#60A5FA');
-            gradient.addColorStop(1, '#DBEAFE');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            // Background
+            if (bgImage.current && bgImage.current.complete) {
+                const xPos = -(data.bgOffset % bgImage.current.width);
+                ctx.drawImage(bgImage.current, xPos, 0, bgImage.current.width, CANVAS_HEIGHT);
+                ctx.drawImage(bgImage.current, xPos + bgImage.current.width, 0, bgImage.current.width, CANVAS_HEIGHT);
+            } else {
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            }
 
-            // Clouds
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            data.clouds.forEach(cloud => {
-                ctx.beginPath();
-                ctx.arc(cloud.x, cloud.y, 30, 0, Math.PI * 2);
-                ctx.arc(cloud.x + 25, cloud.y - 10, 35, 0, Math.PI * 2);
-                ctx.arc(cloud.x + 50, cloud.y, 30, 0, Math.PI * 2);
-                ctx.fill();
+            // Objects
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '40px Silkscreen'; // Pixel Font
+
+            data.items.forEach(item => {
+                if (!item.collected) ctx.fillText(item.type, item.x + item.w / 2, item.y + item.h / 2);
+            });
+            data.obstacles.forEach(obs => {
+                ctx.fillText(obs.type, obs.x + obs.w / 2, obs.y + obs.h / 2);
             });
 
-            // Ground
-            ctx.fillStyle = '#991B1B';
-            ctx.fillRect(0, CANVAS_HEIGHT - GROUND_HEIGHT, CANVAS_WIDTH, GROUND_HEIGHT);
-            ctx.fillStyle = '#B91C1C';
-            ctx.fillRect(0, CANVAS_HEIGHT - GROUND_HEIGHT + 10, CANVAS_WIDTH, GROUND_HEIGHT - 20);
-
-            // Character
+            // Player
             const sheet = character === 'groom' ? groomSheet.current : brideSheet.current;
             if (sheet && sheet.complete && sheet.width > 0) {
                 const frameW = sheet.width / 3;
                 const frameH = sheet.height;
-                const runFrame = Math.floor(data.frame / 8) % 2 + 1;
-                const frameIndex = data.dino.grounded ? runFrame : 0;
-
-                // Apply Aspect Ratio Fix
-                if (data.dino.w === BASE_SIZE && frameW !== frameH) {
-                    const ratio = frameW / frameH;
-                    data.dino.w = data.dino.h * ratio;
-                }
-
-                ctx.save();
-                // Draw with Offset to ground visuals
-                ctx.drawImage(
-                    sheet,
-                    frameIndex * frameW, 0, frameW, frameH,
-                    data.dino.x, data.dino.y + Y_OFFSET, data.dino.w, data.dino.h
-                );
-                ctx.restore();
-            } else {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(data.dino.x, data.dino.y, data.dino.w, data.dino.h);
+                const runFrame = Math.floor(data.frame / 6) % 2 + 1;
+                const frameIndex = (data.dino.grounded && !data.isGameClear) ? runFrame : 0;
+                ctx.drawImage(sheet, frameIndex * frameW, 0, frameW, frameH, data.dino.x, data.dino.y + Y_OFFSET, data.dino.w, data.dino.h);
             }
-
-            // Obstacles
-            ctx.font = '40px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            data.obstacles.forEach(obs => {
-                ctx.save();
-                ctx.translate(obs.x + obs.w / 2, obs.y + obs.h / 2);
-                if (obs.type !== '🎂') ctx.rotate(Math.sin(data.frame * 0.1) * 0.2);
-                ctx.fillText(obs.type, 0, 0);
-                ctx.restore();
-            });
 
             // Particles
-            ctx.fillStyle = '#fff';
             data.particles.forEach(p => {
-                ctx.globalAlpha = p.life / 20;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4); // Square particles
             });
-            ctx.globalAlpha = 1;
-
-            // Ground Detail
-            const flowerOffset = -(data.bgOffset % 100);
-            ctx.font = '20px Arial';
-            for (let i = 0; i < CANVAS_WIDTH + 100; i += 100) {
-                ctx.fillText('🌸', i + flowerOffset, CANVAS_HEIGHT - 10);
-            }
+            data.fireworks.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 3, 3);
+            });
         };
 
-        if (gameState === 'PLAYING') {
+        if (gameState === 'PLAYING' || gameState === 'CLEAR') {
             lastTime = performance.now();
             gameData.current.animationId = requestAnimationFrame(loop);
         } else {
-            // Force redraw initial state to prevent "floating" before start
-            // If image is loaded, it might need one 'tick' or just a manual draw call?
-            // Since we rely on 'imagesLoaded' state trigger, it will redraw when loaded.
-            // Just need to ensure `dino` coordinates are correct BEFORE start.
-            // We fixed initialization of gameData.current.dino above.
             draw(ctx);
         }
 
-        return () => cancelAnimationFrame(gameData.current.animationId);
+        return () => {
+            cancelAnimationFrame(gameData.current.animationId);
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
 
     }, [gameState, character, imagesLoaded]);
 
-    const handleAction = (e) => {
-        if (gameState === 'START' || gameState === 'GAME_OVER') {
+    const handleAction = () => {
+        if (gameState === 'START' || gameState === 'GAME_OVER' || gameState === 'CLEAR') {
+            audioManager.playClick();
             resetGame();
             setGameState('PLAYING');
             checkAchievement('GAME_START');
@@ -380,44 +412,48 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
         }
     };
 
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
     return (
         <div
             onClick={handleAction}
-            className="relative w-full max-w-4xl mx-auto aspect-[2/1] bg-white/50 backdrop-blur-md rounded-[2.5rem] overflow-hidden shadow-soft-xl border border-white/60 font-body select-none cursor-pointer group hover:shadow-soft-2xl transition-all duration-500 hover:-translate-y-1"
+            className="relative w-full aspect-[2/1] bg-sky-300 border-4 border-black overflow-hidden shadow-[8px_8px_0_rgba(0,0,0,0.5)] font-['Silkscreen'] select-none cursor-pointer"
         >
-            <canvas
-                ref={canvasRef}
-                width={800}
-                height={400}
-                className="w-full h-full block rounded-[2rem]"
-            ></canvas>
+            <canvas ref={canvasRef} width={800} height={400} className="w-full h-full block" style={{ imageRendering: 'pixelated' }}></canvas>
 
             {gameState === 'START' && (
-                <div className="absolute inset-0 bg-background/40 flex flex-col items-center justify-center backdrop-blur-[2px]">
-                    <h2 className="text-5xl md:text-6xl text-primary font-heading mb-4 animate-bounce drop-shadow-sm">Wedding Run</h2>
-                    <p className="text-xl text-text/80 mb-8 font-body tracking-wider">Tap to Jump with Love!</p>
-                    <div className="bg-primary text-white px-10 py-4 rounded-full font-body font-bold text-xl shadow-soft-lg hover:bg-primary/90 hover:scale-110 transition-transform">
-                        START GAME
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white p-4">
+                    <h2 className="text-4xl text-yellow-400 mb-4 animate-bounce drop-shadow-md">WEDDING RUN</h2>
+                    <p className="text-sm mb-8 animate-pulse text-gray-300">INSERT COIN TO START</p>
+                    <div className="border-4 border-white px-6 py-2 bg-blue-600 hover:bg-blue-500 blink">
+                        PRESS START
                     </div>
                 </div>
             )}
 
             {gameState === 'GAME_OVER' && (
-                <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center backdrop-blur-md animate-in zoom-in duration-300">
-                    <p className="text-6xl mb-4 animate-bounce">💍</p>
-                    <h2 className="text-4xl text-primary font-heading mb-2">Game Over</h2>
-                    <div className="bg-background p-6 rounded-2xl border border-white/60 shadow-inner mb-8 text-center min-w-[200px]">
-                        <p className="text-sm text-text/60 font-bold mb-2 uppercase tracking-widest">Score</p>
-                        <p className="text-5xl font-heading text-primary">{score}</p>
-                    </div>
-                    <div className="bg-secondary text-white px-8 py-3 rounded-full font-bold text-lg shadow-soft-md hover:scale-105 transition-transform animate-pulse">
-                        TRY AGAIN
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white">
+                    <h2 className="text-5xl text-red-500 mb-4 drop-shadow-md">GAME OVER</h2>
+                    <p className="text-2xl mb-2">SCORE: {score}</p>
+                    <p className="text-lg text-gray-400 mb-8">TIME: {formatTime(time)}</p>
+                    <div className="border-4 border-white px-6 py-2 hover:bg-white hover:text-black transition-colors">
+                        RETRY ?
                     </div>
                 </div>
             )}
 
-            <div className="absolute top-6 right-6 bg-white/80 backdrop-blur-md px-6 py-2 rounded-full border border-white/50 font-heading text-2xl shadow-sm text-primary">
-                {score}m
+            {/* In-Game HUD */}
+            <div className="absolute top-4 left-4 z-20">
+                <div className="bg-black/50 text-white px-3 py-1 border-2 border-white/50 text-sm flex items-center shadow-md backdrop-blur-sm rounded-md">
+                    ⏰ {formatTime(time)}
+                </div>
+            </div>
+            <div className="absolute top-4 right-4 text-2xl text-white drop-shadow-[2px_2px_0_black]">
+                SCORE: {score}
             </div>
         </div>
     );

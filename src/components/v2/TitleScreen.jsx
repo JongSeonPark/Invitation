@@ -87,73 +87,80 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
         }, 3000); // Wait for sequence to finish
     };
 
+    // Simplified pixel loading
+    const bgImage = new URL('../../assets/pixel_castle_bg.png', import.meta.url).href;
+
     return (
-        <div className="flex flex-col items-center justify-center h-full w-full p-4 font-body relative z-10">
+        <div className="flex flex-col items-center justify-center h-full w-full font-['Silkscreen'] relative overflow-hidden text-white">
 
-            {/* Glass Card Container */}
-            <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 md:p-12 shadow-soft-xl border border-white/60 flex flex-col items-center justify-center max-w-lg w-full transition-all duration-700 ease-out transform"
-                style={{ opacity: animate ? 1 : 0, transform: animate ? 'translateY(0)' : 'translateY(20px)' }}>
+            {/* 16-bit Background Layer */}
+            <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})`, imageRendering: 'pixelated' }}>
+                {/* Overlay for readability */}
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+            </div>
 
-                {/* Logo Area */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-6xl md:text-8xl font-heading text-primary drop-shadow-sm tracking-wide mb-4 animate-fade-in-up">
-                        Wedding
-                    </h1>
-                    <p className="text-text/80 text-xl font-medium tracking-widest uppercase border-b border-primary/20 pb-2 inline-block">
-                        Invitation
-                    </p>
-                </div>
+            {/* Pixel Card Container */}
+            <div className={`relative z-10 flex flex-col items-center p-8 transition-all duration-700 transform ${animate ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
 
-                {/* Character/Icon Placeholder */}
-                <div className="my-6 relative group cursor-pointer">
-                    <div className="w-24 h-24 bg-gradient-to-br from-white to-soft-pink rounded-full shadow-soft-md flex items-center justify-center text-4xl overflow-hidden transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-soft-lg border border-white/50">
-                        🕊️
+                {/* Retro Border Box */}
+                <div className="absolute inset-0 border-4 border-white bg-black/60 shadow-lg" style={{ clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)' }}></div>
+
+                {/* Content */}
+                <div className="relative z-20 flex flex-col items-center text-center w-full max-w-md">
+
+                    {/* Title */}
+                    <div className="mb-10 animate-pulse">
+                        <p className="text-yellow-400 text-sm tracking-[0.2em] mb-2 uppercase shine">Join the Quest</p>
+                        <h1 className="text-5xl md:text-7xl text-white drop-shadow-[4px_4px_0_rgba(0,0,0,1)] leading-tight">
+                            Wedding<br />Run
+                        </h1>
                     </div>
-                </div>
 
-                <div className="flex flex-col items-center gap-4 w-full">
-                    {/* Input & Button - Always Visible */}
-                    {!loading ? (
-                        <>
-                            <div className="relative w-full group">
+                    {/* Inputs */}
+                    <div className="w-full flex flex-col gap-4">
+                        {!loading ? (
+                            <>
                                 <input
                                     type="text"
-                                    placeholder="성함을 입력해주세요"
+                                    placeholder="PLAYER NAME"
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
-                                    className="w-full h-14 pl-4 pr-4 rounded-xl border border-secondary/30 bg-white/50 text-center text-lg text-text font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 focus:bg-white/80 transition-all duration-300 placeholder:text-gray-400/70"
+                                    className="w-full bg-black/50 border-4 border-white text-white p-4 text-center text-xl placeholder:text-gray-500 focus:bg-black/70 focus:outline-none focus:border-yellow-400 transition-colors uppercase font-['Silkscreen']"
                                     maxLength={8}
                                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                                     autoFocus
                                 />
+
+                                <button
+                                    onClick={handleLogin}
+                                    className="w-full bg-blue-600 border-b-4 border-r-4 border-blue-800 text-white p-4 text-xl hover:bg-blue-500 hover:translate-y-1 hover:border-b-0 hover:border-r-0 active:translate-y-2 transition-all group relative overflow-hidden"
+                                >
+                                    <span className="relative z-10">INSERT COIN (START)</span>
+                                </button>
+                            </>
+                        ) : (
+                            <div className="w-full border-4 border-white p-6 bg-black/80 text-center">
+                                <p className="text-green-400 text-lg animate-pulse">
+                                    {'>'} {loadingText} <span className="animate-blink">_</span>
+                                </p>
                             </div>
+                        )}
+                    </div>
 
-                            <button
-                                onClick={handleLogin}
-                                className="w-full bg-cta text-white h-14 rounded-xl font-semibold text-lg shadow-soft-md hover:shadow-soft-lg hover:opacity-95 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 group"
-                            >
-                                <span>입장하기</span>
-                                <span className="group-hover:translate-x-1 transition-transform">→</span>
-                            </button>
-                        </>
-                    ) : (
-                        /* Loading State */
-                        <div className="w-full bg-white/60 px-6 py-6 rounded-xl border border-white/50 animate-pulse text-center">
-                            <p className="text-primary font-medium text-lg">
-                                {loadingText}
-                            </p>
-                        </div>
-                    )}
+                    {/* Footer */}
+                    <button
+                        onClick={onSwitchToV1}
+                        className="mt-8 text-xs text-white/50 hover:text-white underline decoration-dashed underline-offset-4"
+                    >
+                        [ BACK TO CLASSIC_OS ]
+                    </button>
                 </div>
-
-                {/* Switch Mode */}
-                <button
-                    onClick={onSwitchToV1}
-                    className="mt-8 text-text/60 text-sm hover:text-primary transition-colors border-b border-transparent hover:border-primary/30 pb-0.5"
-                >
-                    Back to Classic Mode
-                </button>
             </div>
+
+            {/* Scanline Effect */}
+            <div className="absolute inset-0 pointer-events-none z-50 opacity-10"
+                style={{ background: 'linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.5) 51%)', backgroundSize: '100% 4px' }}
+            ></div>
         </div>
     );
 };
