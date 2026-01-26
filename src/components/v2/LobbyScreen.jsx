@@ -120,35 +120,41 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                     </div>
                 </div>
 
-                <div className="pointer-events-auto">
+                <div className="pointer-events-auto flex flex-col items-end gap-2">
                     <button
                         onClick={toggleCharacter}
                         className="bg-blue-600 border-b-4 border-r-4 border-blue-800 text-white px-3 py-1 text-xs hover:bg-blue-500 active:border-b-0 active:border-r-0 active:translate-y-1 transition-all"
                     >
                         SWITCH CHAR
                     </button>
+                    <button
+                        onClick={handleSwitchToV1}
+                        className="text-white/60 text-[10px] hover:text-white hover:underline bg-black/40 px-2 py-1"
+                    >
+                        [ CLASSIC MODE ]
+                    </button>
                 </div>
             </div>
 
             {/* Character Area */}
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-end pb-0 pointer-events-none">
-                <div className="relative group">
+                <div className="relative group flex justify-center">
                     <img
                         src={character === 'bride' ? brideImg : groomImg}
                         alt="Character"
                         className={`
-                            h-[70vh] w-auto object-contain cursor-pointer pointer-events-auto drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]
+                            h-[120vh] w-auto object-contain cursor-pointer pointer-events-auto drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]
                             ${isCheeky ? 'scale-105 brightness-125' : 'scale-100 hover:scale-[1.02]'}
                             transition-all duration-200
                         `}
                         onClick={handleCharacterTouch}
-                        style={{ imageRendering: 'pixelated' }} // Try to force pixel look even on HD img? Or just contrast.
+                        style={{ imageRendering: 'pixelated' }}
                     />
-                    {/* Pixel Speech Bubble */}
+                    {/* Pixel Speech Bubble - Moved to Left */}
                     {showBubble && (
-                        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-white text-black border-4 border-black px-4 py-2 z-30 min-w-[150px] text-center shadow-lg animate-bounce">
-                            <p className="text-sm">{bubbleText}</p>
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-b-4 border-r-4 border-black border-t-0 border-l-0"></div>
+                        <div className="absolute top-[25%] left-[10%] bg-white text-black border-4 border-black px-4 py-2 z-30 min-w-[150px] text-center shadow-lg animate-bounce">
+                            <p className="text-sm font-bold">{bubbleText}</p>
+                            <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45 border-t-4 border-r-4 border-black border-b-0 border-l-0"></div>
                         </div>
                     )}
                 </div>
@@ -160,34 +166,44 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                 <MenuButton icon="📷" label="ALBUM" onClick={() => toggleModal('gallery')} />
                 <MenuButton icon="📖" label="STORY" onClick={() => toggleModal('story')} />
                 <MenuButton icon="🏆" label="RANK" onClick={() => toggleModal('ranking')} />
-                <MenuButton icon="💐" label="BOUQUET" onClick={() => toggleModal('bouquet')} />
                 <MenuButton icon="💌" label="GUEST" onClick={() => toggleModal('recruit')} />
             </div>
 
             {/* Bottom Controls */}
             <div className="absolute bottom-6 left-6 right-6 z-50 flex justify-between items-end pointer-events-auto">
-                <button
-                    onClick={handleSwitchToV1}
-                    className="text-white/60 text-[10px] hover:text-white hover:underline bg-black/40 px-2 py-1"
-                >
-                    [ SYSTEM: CLASSIC MODE ]
-                </button>
-
-                <button
-                    onClick={() => {
-                        toggleModal('game');
-                        checkAchievement('GAME_START');
-                    }}
-                    className="relative group bg-red-600 border-4 border-white text-white px-6 py-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:translate-y-1 hover:shadow-[2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-2 active:shadow-none transition-all"
-                >
-                    <div className="flex items-center gap-3">
-                        <span className="text-2xl animate-pulse">🎮</span>
-                        <div className="flex flex-col items-start leading-none">
-                            <span className="text-[10px] text-yellow-300">INSERT COIN</span>
-                            <span className="text-xl">START GAME</span>
+                {/* Bottom Controls - Dual Game Buttons */}
+                <div className="absolute bottom-6 left-6 right-6 z-50 flex justify-center gap-6 pointer-events-auto">
+                    {/* Bouquet Game Button */}
+                    <button
+                        onClick={() => toggleModal('bouquet')}
+                        className="relative group bg-pink-500 border-4 border-white text-white px-6 py-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:translate-y-1 hover:shadow-[2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-2 active:shadow-none transition-all w-48"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl animate-bounce">💐</span>
+                            <div className="flex flex-col items-start leading-none">
+                                <span className="text-[10px] text-yellow-200">CATCH IT!</span>
+                                <span className="text-lg">BOUQUET</span>
+                            </div>
                         </div>
-                    </div>
-                </button>
+                    </button>
+
+                    {/* Run Game Button */}
+                    <button
+                        onClick={() => {
+                            toggleModal('game');
+                            checkAchievement('GAME_START');
+                        }}
+                        className="relative group bg-red-600 border-4 border-white text-white px-6 py-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:translate-y-1 hover:shadow-[2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-2 active:shadow-none transition-all w-48"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl animate-pulse">🎮</span>
+                            <div className="flex flex-col items-start leading-none">
+                                <span className="text-[10px] text-yellow-300">INSERT COIN</span>
+                                <span className="text-lg">BATTLE RUN</span>
+                            </div>
+                        </div>
+                    </button>
+                </div>
             </div>
 
             {/* Modal Container */}
