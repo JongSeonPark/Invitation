@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { audioManager } from '../../utils/audioManager';
 import { checkAchievement } from '../../utils/achievementManager';
+import { addDiamonds } from '../../utils/currencyManager';
 import brideImg from '../../assets/card_images/bride_nobg.png';
+import { auth, db } from '../../firebase';
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const BouquetGame = ({ onClose }) => {
     const [gameState, setGameState] = useState('start'); // start, playing, gameover
@@ -110,9 +113,31 @@ const BouquetGame = ({ onClose }) => {
         gameLoopRef.current = requestAnimationFrame(updateGame);
     };
 
+    const saveScore = async (finalScore) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        try {
+            const scoreRef = doc(db, "bouquet_scores", user.uid);
+            await setDoc(scoreRef, {
+                uid: user.uid,
+                displayName: user.displayName || 'Guest',
+                score: finalScore,
+                timestamp: serverTimestamp()
+            }, { merge: true });
+        } catch (error) {
+            console.error("Error saving bouquet score:", error);
+        }
+    };
+
     const endGame = (result) => {
         gameStateRef.current = result;
         setGameState(result);
+
+        if (result === 'gameover') {
+            addDiamonds(Math.floor(scoreRef.current));
+            saveScore(scoreRef.current);
+        }
+
         if (result === 'clear') { // Should not happen in loop, but keep for safety
             checkAchievement('BOUQUET_CATCH');
         }
@@ -163,10 +188,10 @@ const BouquetGame = ({ onClose }) => {
             {/* Start Screen */}
             {gameState === 'start' && (
                 <div
-                    className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white z-50 p-4 text-center cursor-pointer"
+                    className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white z-50 p-4 text-center cursor-pointer font-['Silkscreen']"
                     onClick={startGame}
                 >
-                    <h2 className="text-3xl text-yellow-300 mb-4 animate-bounce drop-shadow-md">💐 BOUQUET RUSH 💐</h2>
+                    <h2 className="text-3xl text-yellow-300 mb-4 animate-bounce drop-shadow-md font-['Silkscreen']">💐 BOUQUET RUSH 💐</h2>
                     <p className="mb-2 text-lg">Infinite Challenge!</p>
                     <div className="flex gap-4 mb-6 text-2xl">
                         <span>💐 = +1</span>
@@ -181,11 +206,12 @@ const BouquetGame = ({ onClose }) => {
             {/* Result Screen */}
             {(gameState === 'gameover') && (
                 <div
-                    className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-50 cursor-pointer"
+                    className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-50 cursor-pointer font-['Silkscreen']"
                     onClick={startGame}
                 >
-                    <h2 className="text-4xl mb-4 text-red-500 drop-shadow-md">💀 GAME OVER</h2>
+                    <h2 className="text-4xl mb-4 text-red-500 drop-shadow-md font-['Silkscreen']">💀 GAME OVER</h2>
                     <p className="text-3xl mb-2 text-yellow-300">SCORE: {score}</p>
+                    <p className="text-xl mb-2 text-cyan-400 font-bold animate-pulse">💎 EARNED: +{score}</p>
                     <p className="text-xl mb-8 text-gray-300">Time: {formatTime(time)}</p>
 
                     <p className="text-sm text-gray-400 mb-8 animate-pulse">TAP SCREEN TO RETRY</p>

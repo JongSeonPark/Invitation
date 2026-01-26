@@ -5,6 +5,7 @@ import { auth, db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { checkAchievement } from '../utils/achievementManager';
 import { audioManager } from '../utils/audioManager';
+import { addDiamonds } from '../utils/currencyManager';
 
 const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const canvasRef = useRef(null);
@@ -310,6 +311,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         setGameState('GAME_OVER');
                         if (timerRef.current) clearInterval(timerRef.current);
                         saveScore(score);
+                        addDiamonds(score); // Earn Diamonds
                     }
                 });
 
@@ -426,8 +428,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             <canvas ref={canvasRef} width={800} height={400} className="w-full h-full block" style={{ imageRendering: 'pixelated' }}></canvas>
 
             {gameState === 'START' && (
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white p-4">
-                    <h2 className="text-4xl text-yellow-400 mb-4 animate-bounce drop-shadow-md">WEDDING RUN</h2>
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white p-4 font-['Silkscreen']">
+                    <h2 className="text-4xl text-yellow-400 mb-4 animate-bounce drop-shadow-md font-['Silkscreen']">WEDDING RUN</h2>
                     <p className="text-sm mb-8 animate-pulse text-gray-300">INSERT COIN TO START</p>
                     <div className="border-4 border-white px-6 py-2 bg-blue-600 hover:bg-blue-500 blink">
                         PRESS START
@@ -436,9 +438,10 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             )}
 
             {gameState === 'GAME_OVER' && (
-                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white">
-                    <h2 className="text-5xl text-red-500 mb-4 drop-shadow-md">GAME OVER</h2>
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white font-['Silkscreen']">
+                    <h2 className="text-5xl text-red-500 mb-4 drop-shadow-md font-['Silkscreen']">GAME OVER</h2>
                     <p className="text-2xl mb-2">SCORE: {score}</p>
+                    <p className="text-xl mb-2 text-cyan-400 font-bold animate-pulse">💎 EARNED: +{score}</p>
                     <p className="text-lg text-gray-400 mb-8">TIME: {formatTime(time)}</p>
                     <div className="border-4 border-white px-6 py-2 hover:bg-white hover:text-black transition-colors">
                         RETRY ?

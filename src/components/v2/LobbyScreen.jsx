@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import groomImg from '../../assets/card_images/groom_nobg.png';
 import brideImg from '../../assets/card_images/bride_nobg.png';
+import { subscribeToDiamonds } from '../../utils/currencyManager';
 
 // Pixel Theme Lobby
 
@@ -25,6 +26,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
     const [activeModal, setActiveModal] = useState(null);
     const [dDay, setDDay] = useState('');
     const [isCheeky, setIsCheeky] = useState(false);
+    const [diamonds, setDiamonds] = useState(0);
 
     useEffect(() => {
         const targetDate = new Date('2026-04-25T16:50:00');
@@ -36,7 +38,16 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
         };
         calculateDDay();
         const interval = setInterval(calculateDDay, 1000 * 60);
-        return () => clearInterval(interval);
+
+        // Subscribe to Diamond Balance
+        const unsubscribeDiamonds = subscribeToDiamonds((val) => {
+            setDiamonds(val);
+        });
+
+        return () => {
+            clearInterval(interval);
+            unsubscribeDiamonds();
+        };
     }, []);
 
     const toggleCharacter = () => {
@@ -50,17 +61,17 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
         setTimeout(() => setIsCheeky(false), 200);
 
         const quotes = character === 'bride' ? [
-            "Let's Go!",
-            "Ready to Run?",
-            "Jump! Jump!",
-            "Pixel Love!",
-            "Wedding Quest!"
+            "오늘 세상에서 제일 행복해요!",
+            "식장에서 예쁘게 만나요~",
+            "축하해주셔서 감사합니다!",
+            "우리 행복하게 잘 살게요!",
+            "두근두근 설레는 날이에요!"
         ] : [
-            "Power Up!",
-            "Level Up!",
-            "Game Start!",
-            "Insert Coin!",
-            "Full Speed!"
+            "와주셔서 정말 감사합니다!",
+            "멋진 신랑이 되겠습니다!",
+            "행복한 가정을 꾸리겠습니다.",
+            "신혼여행이 기대되네요!",
+            "오늘 날씨도 정말 좋네요!"
         ];
 
         const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
@@ -113,10 +124,16 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
             {/* Top HUD */}
             <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start pointer-events-none">
-                <div className="pointer-events-auto flex items-center gap-2">
-                    <div className="bg-black/60 border-2 border-white px-3 py-1 flex items-center gap-2 shadow-md">
+                <div className="pointer-events-auto flex flex-col gap-2">
+                    {/* D-Day Badge */}
+                    <div className="bg-black/60 border-2 border-white px-3 py-1 flex items-center gap-2 shadow-md w-fit">
                         <span className="text-yellow-400">📅</span>
                         <span className="text-lg">{dDay}</span>
+                    </div>
+                    {/* Diamond Badge */}
+                    <div className="bg-black/60 border-2 border-cyan-400 px-3 py-1 flex items-center gap-2 shadow-md w-fit animate-pulse">
+                        <span className="text-cyan-400 text-xl">💎</span>
+                        <span className="text-lg text-cyan-100 font-bold">{diamonds}</span>
                     </div>
                 </div>
 
@@ -169,41 +186,38 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                 <MenuButton icon="💌" label="GUEST" onClick={() => toggleModal('recruit')} />
             </div>
 
-            {/* Bottom Controls */}
-            <div className="absolute bottom-6 left-6 right-6 z-50 flex justify-between items-end pointer-events-auto">
-                {/* Bottom Controls - Dual Game Buttons */}
-                <div className="absolute bottom-6 left-6 right-6 z-50 flex justify-center gap-6 pointer-events-auto">
-                    {/* Bouquet Game Button */}
-                    <button
-                        onClick={() => toggleModal('bouquet')}
-                        className="relative group bg-pink-500 border-4 border-white text-white px-6 py-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:translate-y-1 hover:shadow-[2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-2 active:shadow-none transition-all w-48"
-                    >
-                        <div className="flex items-center gap-3">
-                            <span className="text-2xl animate-bounce">💐</span>
-                            <div className="flex flex-col items-start leading-none">
-                                <span className="text-[10px] text-yellow-200">CATCH IT!</span>
-                                <span className="text-lg">BOUQUET</span>
-                            </div>
+            {/* Bottom Controls - Dual Game Buttons */}
+            <div className="absolute bottom-6 left-6 right-6 z-50 flex justify-center gap-6 pointer-events-auto">
+                {/* Run Game Button */}
+                <button
+                    onClick={() => {
+                        toggleModal('game');
+                        checkAchievement('GAME_START');
+                    }}
+                    className="relative group bg-red-600 border-4 border-white text-white px-6 py-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:translate-y-1 hover:shadow-[2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-2 active:shadow-none transition-all w-48"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl animate-pulse">🎮</span>
+                        <div className="flex flex-col items-start leading-none">
+                            <span className="text-[10px] text-yellow-300">INSERT COIN</span>
+                            <span className="text-lg">BATTLE RUN</span>
                         </div>
-                    </button>
+                    </div>
+                </button>
 
-                    {/* Run Game Button */}
-                    <button
-                        onClick={() => {
-                            toggleModal('game');
-                            checkAchievement('GAME_START');
-                        }}
-                        className="relative group bg-red-600 border-4 border-white text-white px-6 py-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:translate-y-1 hover:shadow-[2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-2 active:shadow-none transition-all w-48"
-                    >
-                        <div className="flex items-center gap-3">
-                            <span className="text-2xl animate-pulse">🎮</span>
-                            <div className="flex flex-col items-start leading-none">
-                                <span className="text-[10px] text-yellow-300">INSERT COIN</span>
-                                <span className="text-lg">BATTLE RUN</span>
-                            </div>
+                {/* Bouquet Game Button */}
+                <button
+                    onClick={() => toggleModal('bouquet')}
+                    className="relative group bg-pink-500 border-4 border-white text-white px-6 py-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:translate-y-1 hover:shadow-[2px_2px_0_rgba(0,0,0,0.5)] active:translate-y-2 active:shadow-none transition-all w-48"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl animate-bounce">💐</span>
+                        <div className="flex flex-col items-start leading-none">
+                            <span className="text-[10px] text-yellow-200">CATCH IT!</span>
+                            <span className="text-lg">BOUQUET</span>
                         </div>
-                    </button>
-                </div>
+                    </div>
+                </button>
             </div>
 
             {/* Modal Container */}
@@ -239,4 +253,3 @@ const MenuButton = ({ icon, label, onClick }) => (
 );
 
 export default LobbyScreen;
-
