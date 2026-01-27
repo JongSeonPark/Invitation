@@ -50,7 +50,7 @@ const RankingBoard = () => {
     }, [gameType]); // Refetch on tab change
 
     return (
-        <div className="w-full max-w-2xl mx-auto p-1 font-['Silkscreen'] select-none">
+        <div className="w-full max-w-2xl mx-auto p-1 font-pixel select-none">
             {/* Retro Container */}
             <div className="bg-black/80 backdrop-blur-md border-[6px] border-white rounded-lg p-6 shadow-[8px_8px_0_rgba(0,0,0,0.5)] relative overflow-hidden">
 
@@ -59,7 +59,7 @@ const RankingBoard = () => {
 
                 {/* Header Section */}
                 <div className="text-center mb-6">
-                    <h3 className="text-3xl md:text-4xl text-yellow-400 mb-2 drop-shadow-[4px_4px_0_#b91c1c] animate-pulse tracking-wider font-['Silkscreen'] whitespace-nowrap">
+                    <h3 className="text-3xl md:text-4xl text-yellow-400 mb-2 drop-shadow-[4px_4px_0_#b91c1c] animate-pulse tracking-wider font-pixel whitespace-nowrap">
                         🏆 HALL OF FAME 🏆
                     </h3>
                 </div>

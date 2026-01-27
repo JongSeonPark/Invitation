@@ -91,7 +91,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
     const bgImage = new URL('../../assets/pixel_castle_bg.png', import.meta.url).href;
 
     return (
-        <div className="flex flex-col items-center justify-center h-full w-full font-['Silkscreen'] relative overflow-hidden text-white">
+        <div className="flex flex-col items-center justify-center h-full w-full font-pixel relative overflow-hidden text-white">
 
             {/* 16-bit Background Layer */}
             <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})`, imageRendering: 'pixelated' }}>
@@ -111,8 +111,8 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                     {/* Title */}
                     <div className="mb-10 animate-pulse">
                         <p className="text-yellow-400 text-sm tracking-[0.2em] mb-2 uppercase shine">Join the Quest</p>
-                        <h1 className="text-5xl md:text-7xl text-white drop-shadow-[4px_4px_0_rgba(0,0,0,1)] leading-tight">
-                            Wedding<br />Run
+                        <h1 className="text-5xl md:text-7xl text-white drop-shadow-[4px_4px_0_rgba(0,0,0,1)] leading-tight font-pixel">
+                            WEDDING<br />QUEST
                         </h1>
                     </div>
 
@@ -125,7 +125,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                                     placeholder="PLAYER NAME"
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
-                                    className="w-full bg-black/50 border-4 border-white text-white p-4 text-center text-xl placeholder:text-gray-500 focus:bg-black/70 focus:outline-none focus:border-yellow-400 transition-colors uppercase font-['Silkscreen']"
+                                    className="w-full bg-black/50 border-4 border-white text-white p-4 text-center text-xl placeholder:text-gray-500 focus:bg-black/70 focus:outline-none focus:border-yellow-400 transition-colors uppercase font-pixel"
                                     maxLength={8}
                                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                                     autoFocus

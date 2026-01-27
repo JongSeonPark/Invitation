@@ -15,6 +15,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const [character, setCharacter] = useState(selectedCharacter);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const timerRef = useRef(null);
+    const scoreRef = useRef(0);
+
 
     // Load Images
     const groomSheet = useRef(new Image());
@@ -141,6 +143,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             spawnRate: 100 // Initial spawn rate (frames)
         };
         setScore(0);
+        scoreRef.current = 0;
         setTime(0);
     };
 
@@ -228,11 +231,12 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 data.bgOffset += (data.speed * 0.5) * dt;
 
                 if (data.frame % 30 === 0) {
-                    if (score >= CLEAR_SCORE) {
+                    if (scoreRef.current >= CLEAR_SCORE) {
                         data.isGameClear = true;
                         setGameState('CLEAR');
                         checkAchievement('GAME_CLEAR');
-                        saveScore(score);
+                        saveScore(scoreRef.current);
+                        addDiamonds(scoreRef.current);
                         audioManager.playWin();
                         createFirework(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
                         if (timerRef.current) clearInterval(timerRef.current);
@@ -292,7 +296,11 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                     if (checkCol(item)) {
                         item.collected = true;
                         audioManager.playConfirm();
-                        setScore(prev => prev + 1);
+                        setScore(prev => {
+                            const newScore = prev + 1;
+                            scoreRef.current = newScore;
+                            return newScore;
+                        });
 
                         for (let i = 0; i < 5; i++) {
                             data.particles.push({
@@ -310,8 +318,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         data.isGameOver = true;
                         setGameState('GAME_OVER');
                         if (timerRef.current) clearInterval(timerRef.current);
-                        saveScore(score);
-                        addDiamonds(score); // Earn Diamonds
+                        saveScore(scoreRef.current);
+                        addDiamonds(scoreRef.current); // Earn Diamonds
                     }
                 });
 

@@ -68,7 +68,7 @@ const StoryMode = ({ onClose }) => {
             </div>
 
             {/* Retro Dialogue Box */}
-            <div className="relative z-10 mx-2 mb-2 md:m-6 md:mb-8 font-['Silkscreen']">
+            <div className="relative z-10 mx-2 mb-2 md:m-6 md:mb-8 font-pixel">
                 {/* Name Tag - Pixel Style */}
                 <div className={`
                     absolute -top-10 left-0 border-4 border-white border-b-0 px-6 py-2

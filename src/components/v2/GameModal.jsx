@@ -2,8 +2,8 @@ import React from 'react';
 
 const GameModal = ({ title, onClose, children }) => {
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex justify-center items-center p-4 font-['Silkscreen'] select-none">
-            <div className="w-full max-w-lg max-h-[85vh] bg-white border-4 border-black shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-[slideUp_0.3s_steps(4)] relative">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex justify-center items-center p-2 md:p-4 font-pixel select-none">
+            <div className="w-full max-w-3xl max-h-[90vh] bg-white border-4 border-black shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col overflow-hidden animate-[slideUp_0.3s_steps(4)] relative">
 
                 {/* Pixel Corner Decorations (CSS pseudo-elements or just simple borders) */}
 

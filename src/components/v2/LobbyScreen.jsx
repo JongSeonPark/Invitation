@@ -115,7 +115,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
     const bgImage = new URL('../../assets/pixel_castle_bg.png', import.meta.url).href;
 
     return (
-        <div className="relative w-full h-full overflow-hidden bg-black font-['Silkscreen'] select-none text-white">
+        <div className="relative w-full h-full overflow-hidden bg-black font-pixel select-none text-white">
 
             {/* Background Layer */}
             <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})`, imageRendering: 'pixelated' }}>
@@ -183,7 +183,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                 <MenuButton icon="📷" label="ALBUM" onClick={() => toggleModal('gallery')} />
                 <MenuButton icon="📖" label="STORY" onClick={() => toggleModal('story')} />
                 <MenuButton icon="🏆" label="RANK" onClick={() => toggleModal('ranking')} />
-                <MenuButton icon="💌" label="GUEST" onClick={() => toggleModal('recruit')} />
+                <MenuButton icon="💌" label="뽑기" onClick={() => toggleModal('recruit')} />
             </div>
 
             {/* Bottom Controls - Dual Game Buttons */}

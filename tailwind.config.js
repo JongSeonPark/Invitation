@@ -18,6 +18,7 @@ export default {
                 heading: ['"Great Vibes"', 'cursive'],
                 body: ['"Cormorant Infant"', 'serif'],
                 classic: ['"Gowun Batang"', 'serif'],
+                pixel: ['"DungGeunMo"', '"Silkscreen"', 'cursive'],
             },
             boxShadow: {
                 'soft-sm': 'var(--shadow-sm)',
