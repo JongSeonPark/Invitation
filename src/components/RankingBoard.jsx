@@ -60,7 +60,7 @@ const RankingBoard = () => {
                 {/* Header Section */}
                 <div className="text-center mb-6">
                     <h3 className="text-3xl md:text-4xl text-yellow-400 mb-2 drop-shadow-[4px_4px_0_#b91c1c] animate-pulse tracking-wider font-pixel whitespace-nowrap">
-                        🏆 HALL OF FAME 🏆
+                        🏆 명예의 전당 🏆
                     </h3>
                 </div>
 
@@ -70,13 +70,13 @@ const RankingBoard = () => {
                         onClick={() => setGameType('run')}
                         className={`flex-1 md:flex-none px-2 md:px-4 py-2 border-t-4 border-x-4 rounded-t-lg transition-all text-xs md:text-sm ${gameType === 'run' ? 'bg-blue-600 border-white text-white -mb-1 pb-3' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700 mt-2'}`}
                     >
-                        🏃 WEDDING RUN
+                        🏃 신랑 입장
                     </button>
                     <button
                         onClick={() => setGameType('bouquet')}
                         className={`flex-1 md:flex-none px-2 md:px-4 py-2 border-t-4 border-x-4 rounded-t-lg transition-all text-xs md:text-sm ${gameType === 'bouquet' ? 'bg-pink-600 border-white text-white -mb-1 pb-3' : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700 mt-2'}`}
                     >
-                        💐 BOUQUET RUSH
+                        💐 부케 받기
                     </button>
                 </div>
 
@@ -85,15 +85,15 @@ const RankingBoard = () => {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center p-8 h-[300px] text-white">
                             <div className="animate-spin text-4xl mb-4">⌛</div>
-                            <p className="animate-pulse">LOADING DATA...</p>
+                            <p className="animate-pulse">데이터 로딩 중...</p>
                         </div>
                     ) : (
                         <table className="w-full text-left bg-black text-white">
                             <thead className={`${gameType === 'run' ? 'bg-blue-800' : 'bg-pink-800'} text-yellow-300 border-b-4 border-white`}>
                                 <tr>
-                                    <th className="p-4 text-center w-16">RANK</th>
-                                    <th className="p-4">AGENT</th>
-                                    <th className="p-4 text-right">SCORE</th>
+                                    <th className="p-4 text-center w-16">순위</th>
+                                    <th className="p-4">이름</th>
+                                    <th className="p-4 text-right">점수</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -128,7 +128,7 @@ const RankingBoard = () => {
                                             <td className={`p-3 ${isMe ? 'text-cyan-300' : getRankColor(index)}`}>
                                                 <div className="flex flex-col">
                                                     <span className="truncate max-w-[120px] md:max-w-none block">{user.displayName}</span>
-                                                    {isMe && <span className="text-[10px] text-cyan-500">YOU</span>}
+                                                    {isMe && <span className="text-[10px] text-cyan-500">나</span>}
                                                 </div>
                                             </td>
                                             <td className={`p-3 text-right ${index < 3 ? 'text-yellow-200' : 'text-gray-300'}`}>
@@ -140,7 +140,7 @@ const RankingBoard = () => {
                                 {rankings.length === 0 && (
                                     <tr>
                                         <td colSpan="3" className="p-8 text-center text-gray-500">
-                                            NO RECORDS YET
+                                            아직 기록이 없습니다
                                         </td>
                                     </tr>
                                 )}
@@ -150,7 +150,7 @@ const RankingBoard = () => {
                 </div>
 
                 <div className="mt-6 text-center text-xs text-gray-500 tracking-widest uppercase animate-pulse">
-                    INSERT COIN TO CHALLENGE
+                    게임에 참여해서 랭킹에 도전하세요
                 </div>
             </div>
         </div>
