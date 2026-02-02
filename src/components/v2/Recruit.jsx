@@ -3,9 +3,17 @@ import { createPortal } from 'react-dom';
 import { audioManager } from '../../utils/audioManager';
 import { spendDiamonds } from '../../utils/currencyManager';
 
-// Import images exactly like Gallery.jsx
-const imageModules = import.meta.glob('../../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
-const images = Object.values(imageModules).map(module => module.default);
+// Import image loader
+import { loadWeddingImages as loadImages } from '../../utils/imageLoader';
+
+const images = loadImages();
+
+// Probability Settings
+const GACHA_PROBABILITY = {
+    SSR: 0.1, // 10%
+    SR: 0.3,  // 30%
+    R: 0.6    // 60%
+};
 
 const Recruit = () => {
     const [results, setResults] = useState([]); // Array of { image, rarity }
@@ -31,20 +39,42 @@ const Recruit = () => {
             const newResults = [];
 
             for (let i = 0; i < count; i++) {
-                const randomIndex = Math.floor(Math.random() * images.length);
-                const selectedImage = images[randomIndex];
+                // 1. Determine Rarity
+                const rand = Math.random();
+                let targetRarity = 'R';
+                if (rand < GACHA_PROBABILITY.SSR) targetRarity = 'SSR';
+                else if (rand < GACHA_PROBABILITY.SSR + GACHA_PROBABILITY.SR) targetRarity = 'SR';
 
-                // Save to Collection
-                const savedCollection = JSON.parse(localStorage.getItem('wedding_collection') || '[]');
-                if (!savedCollection.includes(randomIndex)) {
-                    savedCollection.push(randomIndex);
-                    localStorage.setItem('wedding_collection', JSON.stringify(savedCollection));
+                // 2. Filter available images for this rarity
+                let pool = images.filter(img => img.rarity === targetRarity);
+
+                // Fallback (if pool is empty, downgrade)
+                if (pool.length === 0) {
+                    targetRarity = 'SR';
+                    pool = images.filter(img => img.rarity === targetRarity);
+                }
+                if (pool.length === 0) {
+                    targetRarity = 'R';
+                    pool = images.filter(img => img.rarity === targetRarity);
+                }
+                // If still empty (no images at all), skip or handle error. 
+                // Assuming R has images.
+
+                const randomImage = pool[Math.floor(Math.random() * pool.length)];
+
+                // Save to Collection (by Path)
+                const savedCollection = JSON.parse(localStorage.getItem('wedding_collection_v2') || '[]');
+                if (!savedCollection.includes(randomImage.path)) {
+                    savedCollection.push(randomImage.path);
+                    localStorage.setItem('wedding_collection_v2', JSON.stringify(savedCollection));
                 }
 
-                // Mock Rarity
-                const rand = Math.random();
-                const rarity = rand > 0.8 ? 'SSR/최고' : rand > 0.5 ? 'SR/희귀' : 'R/보통';
-                newResults.push({ image: selectedImage, rarity });
+                // Push result
+                newResults.push({
+                    image: randomImage.src,
+                    rarity: targetRarity === 'SSR' ? 'SSR/최고' : targetRarity === 'SR' ? 'SR/희귀' : 'R/보통',
+                    originalRarity: targetRarity
+                });
             }
 
             // Trigger collection update event once if new items found

@@ -224,7 +224,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
             {activeModal && (
                 <GameModal title={getModalTitle(activeModal)} onClose={closeModal}>
                     {activeModal === 'map' && <Location />}
-                    {activeModal === 'gallery' && <Gallery />}
+                    {activeModal === 'gallery' && <Gallery showRarity={true} />}
                     {activeModal === 'info' && <CoupleCards />}
                     {activeModal === 'game' && (
                         <div className="flex flex-col items-center justify-center py-4 w-full">

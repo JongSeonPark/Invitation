@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
-// Vite의 기능을 이용해 images 폴더의 모든 jpg/png 파일을 자동으로 가져옵니다.
-const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
-const images = Object.values(imageModules).map(module => module.default);
+import { loadWeddingImages } from '../utils/imageLoader';
 
-const Gallery = ({ forceUnlock = false }) => {
+const images = loadWeddingImages();
+
+const Gallery = ({ forceUnlock = false, rarityFilter = null, showRarity = false }) => {
     const [selectedImage, setSelectedImage] = useState(null);
 
     // 이미지가 없을 경우를 대비한 방어 코드
@@ -19,7 +19,7 @@ const Gallery = ({ forceUnlock = false }) => {
         if (forceUnlock) return; // Don't need to load if forced
 
         const loadCollection = () => {
-            const saved = JSON.parse(localStorage.getItem('wedding_collection') || '[]');
+            const saved = JSON.parse(localStorage.getItem('wedding_collection_v2') || '[]');
             setUnlockedIndices(saved);
         };
         loadCollection();
@@ -38,7 +38,7 @@ const Gallery = ({ forceUnlock = false }) => {
     // Also reload whenever the modal is opened (simple check could be done better, but this works)
     useEffect(() => {
         if (forceUnlock) return;
-        const saved = JSON.parse(localStorage.getItem('wedding_collection') || '[]');
+        const saved = JSON.parse(localStorage.getItem('wedding_collection_v2') || '[]');
         setUnlockedIndices(saved);
     }, [images, forceUnlock]); // trigger on mount
 
@@ -59,45 +59,94 @@ const Gallery = ({ forceUnlock = false }) => {
                 </p>
 
                 <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
-                    {images.map((src, index) => {
-                        const isUnlocked = forceUnlock || unlockedIndices.includes(index);
-                        return (
-                            <div
-                                key={index}
-                                className="break-inside-avoid group relative rounded-2xl overflow-hidden shadow-soft-md hover:shadow-soft-xl transition-all duration-500 hover:-translate-y-1 bg-white"
-                                onClick={() => isUnlocked && setSelectedImage(src)}
-                            >
-                                <div className="relative overflow-hidden">
-                                    <img
-                                        src={src}
-                                        alt={`Gallery ${index + 1}`}
-                                        className={`w-full h-auto object-cover transition-all duration-700 
-                                            ${isUnlocked
-                                                ? 'cursor-pointer hover:scale-105 filter brightness-100'
-                                                : 'blur-xl grayscale contrast-125 cursor-not-allowed opacity-50'
-                                            }
-                                        `}
-                                        loading="lazy"
-                                    />
+                    {images
+                        .filter(img => !rarityFilter || img.rarity === rarityFilter)
+                        .sort((a, b) => {
+                            const rarityOrder = { 'SSR': 3, 'SR': 2, 'R': 1 };
+                            const rarityA = a.rarity.includes('SSR') ? 'SSR' : a.rarity.includes('SR') ? 'SR' : 'R';
+                            const rarityB = b.rarity.includes('SSR') ? 'SSR' : b.rarity.includes('SR') ? 'SR' : 'R';
+                            // Sort R -> SR -> SSR (Ascending order of value) - User request
+                            return rarityOrder[rarityA] - rarityOrder[rarityB];
+                        })
+                        .map((img, index) => {
+                            const isUnlocked = forceUnlock || unlockedIndices.includes(img.path);
 
-                                    {/* Overlay for Unlocked Images */}
-                                    {isUnlocked && (
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
-                                    )}
+                            // Define styles based on rarity (only if showRarity is true)
+                            const currentRarity = img.rarity.includes('SSR') ? 'SSR' : img.rarity.includes('SR') ? 'SR' : 'R';
 
-                                    {/* Lock Overlay */}
-                                    {!isUnlocked && (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 z-10 backdrop-blur-[2px]">
-                                            <div className="bg-white/90 backdrop-blur-md p-4 rounded-full shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                                                <span className="text-2xl">🔒</span>
-                                            </div>
-                                            <span className="text-white font-bold tracking-widest mt-2 drop-shadow-md text-xs uppercase bg-black/20 px-3 py-1 rounded-full">Locked</span>
+                            const rarityBorder = {
+                                SSR: "border-yellow-400 ring-2 ring-yellow-400/50 shadow-md",
+                                SR: "border-blue-400 ring-1 ring-blue-400/30",
+                                R: "border-stone-400"
+                            };
+
+                            const badgeColor = {
+                                SSR: "bg-yellow-400 text-black border-yellow-200",
+                                SR: "bg-blue-500 text-white border-blue-300",
+                                R: "bg-stone-500 text-white border-stone-400"
+                            };
+
+                            const badgeIcon = {
+                                SSR: "👑",
+                                SR: "💎",
+                                R: "🏷️"
+                            };
+
+                            return (
+                                <div
+                                    key={img.path}
+                                    className={`
+                                        break-inside-avoid group relative rounded-2xl overflow-hidden shadow-soft-md hover:shadow-soft-xl transition-all duration-500 hover:-translate-y-1 bg-white
+                                        ${showRarity && isUnlocked ? `border-[3px] ${rarityBorder[currentRarity]}` : ''}
+                                    `}
+                                    onClick={() => isUnlocked && setSelectedImage(img.src)}
+                                >
+                                    {/* Rarity Badge - Show even if locked */}
+                                    {showRarity && (
+                                        <div className={`
+                                            absolute top-2 right-2 z-20 
+                                            px-2 py-0.5 rounded-full border shadow-sm
+                                            text-[10px] font-bold flex items-center gap-1
+                                            backdrop-blur-sm
+                                            ${badgeColor[currentRarity]}
+                                            ${!isUnlocked && 'opacity-80 grayscale-[30%]'} 
+                                        `}>
+                                            <span>{badgeIcon[currentRarity]}</span>
+                                            <span>{currentRarity}</span>
                                         </div>
                                     )}
+
+                                    <div className="relative overflow-hidden">
+                                        <img
+                                            src={img.src}
+                                            alt={`Gallery ${index + 1}`}
+                                            className={`w-full h-auto object-cover transition-all duration-700 
+                                                ${isUnlocked
+                                                    ? 'cursor-pointer hover:scale-105 filter brightness-100'
+                                                    : 'blur-xl grayscale contrast-125 cursor-not-allowed opacity-50'
+                                                }
+                                            `}
+                                            loading="lazy"
+                                        />
+
+                                        {/* Overlay for Unlocked Images */}
+                                        {isUnlocked && (
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
+                                        )}
+
+                                        {/* Lock Overlay */}
+                                        {!isUnlocked && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 z-10 backdrop-blur-[2px]">
+                                                <div className="bg-white/90 backdrop-blur-md p-4 rounded-full shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                                                    <span className="text-2xl">🔒</span>
+                                                </div>
+                                                <span className="text-white font-bold tracking-widest mt-2 drop-shadow-md text-xs uppercase bg-black/20 px-3 py-1 rounded-full">Locked</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
                 </div>
             </div>
 

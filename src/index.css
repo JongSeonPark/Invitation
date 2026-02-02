@@ -2,9 +2,9 @@
 
 @font-face {
   font-family: 'NeoDunggeunmoPro-Regular';
-  src: url('/Invitation/fonts/NeoDunggeunmoPro-Regular.woff2') format('woff2'),
-    url('/Invitation/fonts/NeoDunggeunmoPro-Regular.woff') format('woff'),
-    url('/Invitation/fonts/NeoDunggeunmoPro-Regular.ttf') format('truetype');
+  src: url('/fonts/NeoDunggeunmoPro-Regular.woff2') format('woff2'),
+    url('/fonts/NeoDunggeunmoPro-Regular.woff') format('woff'),
+    url('/fonts/NeoDunggeunmoPro-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
