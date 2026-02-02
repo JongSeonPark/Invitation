@@ -110,7 +110,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
 
                     {/* Title */}
                     <div className="mb-10 animate-pulse">
-                        <p className="text-yellow-400 text-sm tracking-[0.2em] mb-2 uppercase shine">Join the Quest</p>
+                        <p className="text-yellow-400 text-sm tracking-[0.2em] mb-2 uppercase shine">결혼식 퀘스트에 참여하세요</p>
                         <h1 className="text-5xl md:text-7xl text-white drop-shadow-[4px_4px_0_rgba(0,0,0,1)] leading-tight font-pixel">
                             WEDDING<br />QUEST
                         </h1>
@@ -122,7 +122,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                             <>
                                 <input
                                     type="text"
-                                    placeholder="PLAYER NAME"
+                                    placeholder="이름 (닉네임)"
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
                                     className="w-full bg-black/50 border-4 border-white text-white p-4 text-center text-xl placeholder:text-gray-500 focus:bg-black/70 focus:outline-none focus:border-yellow-400 transition-colors uppercase font-pixel"
@@ -135,7 +135,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                                     onClick={handleLogin}
                                     className="w-full bg-blue-600 border-b-4 border-r-4 border-blue-800 text-white p-4 text-xl hover:bg-blue-500 hover:translate-y-1 hover:border-b-0 hover:border-r-0 active:translate-y-2 transition-all group relative overflow-hidden"
                                 >
-                                    <span className="relative z-10">INSERT COIN (START)</span>
+                                    <span className="relative z-10">게임 시작 (START)</span>
                                 </button>
                             </>
                         ) : (
@@ -152,7 +152,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                         onClick={onSwitchToV1}
                         className="mt-8 text-xs text-white/50 hover:text-white underline decoration-dashed underline-offset-4"
                     >
-                        [ BACK TO CLASSIC_OS ]
+                        [ 클래식 청첩장으로 돌아가기 ]
                     </button>
                 </div>
             </div>

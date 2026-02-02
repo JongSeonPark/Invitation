@@ -98,15 +98,15 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
     const getModalTitle = (modal) => {
         switch (modal) {
-            case 'map': return 'WORLD MAP';
-            case 'gallery': return 'GALLERY';
-            case 'recruit': return 'GUEST BOOK';
-            case 'story': return 'PROLOGUE';
-            case 'ranking': return 'RANKING';
-            case 'achievement': return 'TROPHIES';
-            case 'info': return 'PLAYER INFO';
-            case 'game': return 'MINI GAME';
-            case 'bouquet': return 'BOUQUET TOSS';
+            case 'map': return '오시는 길';
+            case 'gallery': return '웨딩 앨범';
+            case 'recruit': return '축하 메시지';
+            case 'story': return '초대글';
+            case 'ranking': return '랭킹';
+            case 'achievement': return '업적';
+            case 'info': return '플레이어 정보';
+            case 'game': return '미니 게임';
+            case 'bouquet': return '부케 던지기';
             default: return '';
         }
     }
@@ -148,7 +148,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                         onClick={handleSwitchToV1}
                         className="text-white/60 text-[10px] hover:text-white hover:underline bg-black/40 px-2 py-1"
                     >
-                        [ CLASSIC MODE ]
+                        [ 클래식 청첩장 ]
                     </button>
                 </div>
             </div>
@@ -179,11 +179,11 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
             {/* Right Menu - Retro Buttons */}
             <div className="absolute top-1/2 right-4 -translate-y-1/2 flex flex-col gap-3 pointer-events-auto z-40">
-                <MenuButton icon="🗺️" label="MAP" onClick={() => toggleModal('map')} />
-                <MenuButton icon="📷" label="ALBUM" onClick={() => toggleModal('gallery')} />
-                <MenuButton icon="📖" label="STORY" onClick={() => toggleModal('story')} />
-                <MenuButton icon="🏆" label="RANK" onClick={() => toggleModal('ranking')} />
-                <MenuButton icon="💌" label="뽑기" onClick={() => toggleModal('recruit')} />
+                <MenuButton icon="🗺️" label="오시는 길" onClick={() => toggleModal('map')} />
+                <MenuButton icon="📷" label="웨딩 앨범" onClick={() => toggleModal('gallery')} />
+                <MenuButton icon="📖" label="초대글" onClick={() => toggleModal('story')} />
+                <MenuButton icon="🏆" label="랭킹" onClick={() => toggleModal('ranking')} />
+                <MenuButton icon="💌" label="방명록" onClick={() => toggleModal('recruit')} />
             </div>
 
             {/* Bottom Controls - Dual Game Buttons */}
@@ -199,8 +199,8 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                     <div className="flex items-center gap-3">
                         <span className="text-2xl animate-pulse">🎮</span>
                         <div className="flex flex-col items-start leading-none">
-                            <span className="text-[10px] text-yellow-300">INSERT COIN</span>
-                            <span className="text-lg">BATTLE RUN</span>
+                            <span className="text-[10px] text-yellow-300">게임 시작</span>
+                            <span className="text-lg">신랑 입장</span>
                         </div>
                     </div>
                 </button>
@@ -213,8 +213,8 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                     <div className="flex items-center gap-3">
                         <span className="text-2xl animate-bounce">💐</span>
                         <div className="flex flex-col items-start leading-none">
-                            <span className="text-[10px] text-yellow-200">CATCH IT!</span>
-                            <span className="text-lg">BOUQUET</span>
+                            <span className="text-[10px] text-yellow-200">나이스 캐치</span>
+                            <span className="text-lg">부케 받기</span>
                         </div>
                     </div>
                 </button>
