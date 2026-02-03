@@ -18,6 +18,7 @@ import { checkAchievement } from '../../utils/achievementManager';
 import RankingBoard from '../RankingBoard';
 import AchievementBoard from '../AchievementBoard';
 import BouquetGame from './BouquetGame';
+import AchievementPopup from '../AchievementPopup';
 
 const LobbyScreen = ({ onSwitchToV1 }) => {
     const [character, setCharacter] = useState('bride');
@@ -116,6 +117,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-black font-pixel select-none text-white">
+            <AchievementPopup />
 
             {/* Background Layer */}
             <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})`, imageRendering: 'pixelated' }}>
@@ -183,6 +185,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                 <MenuButton icon="📷" label="웨딩 앨범" onClick={() => toggleModal('gallery')} />
                 <MenuButton icon="📖" label="초대글" onClick={() => toggleModal('story')} />
                 <MenuButton icon="🏆" label="랭킹" onClick={() => toggleModal('ranking')} />
+                <MenuButton icon="🎖️" label="업적" onClick={() => toggleModal('achievement')} />
                 <MenuButton icon="💌" label="방명록" onClick={() => toggleModal('recruit')} />
             </div>
 

@@ -12,7 +12,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const [gameState, setGameState] = useState('START'); // START, PLAYING, GAME_OVER, CLEAR
     const [score, setScore] = useState(0);
     const [time, setTime] = useState(0);
-    const [character, setCharacter] = useState(selectedCharacter);
+    const [character, setCharacter] = useState('groom'); // Force Groom Only
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const timerRef = useRef(null);
     const scoreRef = useRef(0);
@@ -22,6 +22,9 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const groomSheet = useRef(new Image());
     const brideSheet = useRef(new Image());
     const bgImage = useRef(new Image());
+
+    // Cache for pre-rendered emojis
+    const emojiCache = useRef({});
 
     useEffect(() => {
         let loaded = 0;
@@ -83,6 +86,22 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
         loadSprite(groomSheet, groomSprites);
         loadSprite(brideSheet, brideSprites);
 
+        // Pre-render Emojis
+        const emojis = ['🎟️', '🍔', '✈️', '💍', '💌', '🚧', '🪨', '🔥'];
+        emojis.forEach(emoji => {
+            const c = document.createElement('canvas');
+            c.width = 50;
+            c.height = 50;
+            const cx = c.getContext('2d');
+            cx.font = '40px serif'; // Use standard font for emoji compatibility
+            cx.textAlign = 'center';
+            cx.textBaseline = 'middle';
+            cx.fillText(emoji, 25, 27);
+            const img = new Image();
+            img.src = c.toDataURL();
+            emojiCache.current[emoji] = img;
+        });
+
     }, []);
 
     // Game Constants
@@ -140,7 +159,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             isGameClear: false,
             animationId: null,
             speed: 8, // Initial speed
-            spawnRate: 100 // Initial spawn rate (frames)
+            spawnRate: 18 // Initial spawn rate (frames) - Crazy Mode (2x of previous 3x)
         };
         setScore(0);
         scoreRef.current = 0;
@@ -150,7 +169,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const jump = () => {
         if (gameData.current.dino.grounded) {
             audioManager.playJump();
-            gameData.current.dino.dy = -18;
+            gameData.current.dino.dy = -15; // Lower jump (was -18)
             gameData.current.dino.grounded = false;
 
             for (let i = 0; i < 5; i++) {
@@ -225,8 +244,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 // Difficulty Scaling
                 // Speed increases every 500 frames, max 16
                 data.speed = Math.min(16, 8 + Math.floor(data.frame / 500));
-                // Spawn rate decreases (gets faster) every 300 frames, min 40
-                data.spawnRate = Math.max(40, 100 - Math.floor(data.frame / 300) * 10);
+                // Spawn rate decreases (gets faster) every 300 frames, min 8
+                data.spawnRate = Math.max(8, 18 - Math.floor(data.frame / 300) * 2);
 
                 data.bgOffset += (data.speed * 0.5) * dt;
 
@@ -244,7 +263,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 }
 
                 // Physics
-                data.dino.dy += 0.8 * dt;
+                data.dino.dy += 1.5 * dt; // Stronger gravity (was 0.8) for faster fall
                 data.dino.y += data.dino.dy * dt;
                 if (data.dino.y + data.dino.h > CANVAS_HEIGHT - GROUND_HEIGHT) {
                     data.dino.y = CANVAS_HEIGHT - GROUND_HEIGHT - data.dino.h;
@@ -299,6 +318,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         setScore(prev => {
                             const newScore = prev + 1;
                             scoreRef.current = newScore;
+                            // Check Achievement on Score Change
+                            if (newScore === 100) checkAchievement('GAME_SCORE', newScore);
                             return newScore;
                         });
 
@@ -369,11 +390,17 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             ctx.textBaseline = 'middle';
             ctx.font = '40px Silkscreen'; // Pixel Font
 
+
+            // Objects (Draw Images from Cache)
             data.items.forEach(item => {
-                if (!item.collected) ctx.fillText(item.type, item.x + item.w / 2, item.y + item.h / 2);
+                if (!item.collected && emojiCache.current[item.type]) {
+                    ctx.drawImage(emojiCache.current[item.type], item.x, item.y, item.w, item.h);
+                }
             });
             data.obstacles.forEach(obs => {
-                ctx.fillText(obs.type, obs.x + obs.w / 2, obs.y + obs.h / 2);
+                if (emojiCache.current[obs.type]) {
+                    ctx.drawImage(emojiCache.current[obs.type], obs.x, obs.y, obs.w, obs.h);
+                }
             });
 
             // Player
@@ -386,11 +413,19 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 ctx.drawImage(sheet, frameIndex * frameW, 0, frameW, frameH, data.dino.x, data.dino.y + Y_OFFSET, data.dino.w, data.dino.h);
             }
 
-            // Particles
+            // Particles (Batch drawing by color to reduce state changes)
+            // Yellow
+            ctx.fillStyle = '#FFD700';
             data.particles.forEach(p => {
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, 4, 4); // Square particles
+                if (p.color === '#FFD700') ctx.fillRect(p.x, p.y, 4, 4);
             });
+            // White
+            ctx.fillStyle = '#FFFFFF';
+            data.particles.forEach(p => {
+                if (p.color === '#fff' || p.color === '#FFFFFF') ctx.fillRect(p.x, p.y, 4, 4);
+            });
+
+            // Fireworks
             data.fireworks.forEach(p => {
                 ctx.fillStyle = p.color;
                 ctx.fillRect(p.x, p.y, 3, 3);

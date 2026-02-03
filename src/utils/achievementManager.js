@@ -30,33 +30,77 @@ export const ACHIEVEMENTS = {
     }
 };
 
+// Cache to store unlocked achievement IDs in memory
+let cachedAchievements = null;
+let isFetching = false;
+// Session-level Set to prevent duplicate firing while cache is loading
+const sessionUnlocked = new Set();
+
+// Initialize cache from localStorage if available (optional optimization)
+try {
+    const saved = localStorage.getItem('my_achievements');
+    if (saved) {
+        cachedAchievements = JSON.parse(saved);
+        cachedAchievements.forEach(id => sessionUnlocked.add(id));
+    }
+} catch (e) { console.error(e); }
+
 export const checkAchievement = async (type, value = null) => {
     const user = auth.currentUser;
     if (!user) return; // Must be logged in
 
     try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+        // 1. Initialize Cache if empty
+        if (cachedAchievements === null && !isFetching) {
+            isFetching = true;
+            try {
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    cachedAchievements = userSnap.data().achievements || [];
+                } else {
+                    cachedAchievements = [];
+                }
+                // Sync sessionUnlocked with fresh cache
+                cachedAchievements.forEach(id => sessionUnlocked.add(id));
+                localStorage.setItem('my_achievements', JSON.stringify(cachedAchievements));
+            } catch (err) {
+                console.error("Failed to fetch achievements:", err);
+            } finally {
+                isFetching = false;
+            }
+        }
 
-        if (!userSnap.exists()) return;
-
-        const userData = userSnap.data();
-        const unlocked = userData.achievements || [];
-
+        // 2. Define Unlock Logic
         const unlock = async (id) => {
-            if (unlocked.includes(id)) return;
+            // Check session Set first (Instant return if already unlocked/fired in this session)
+            if (sessionUnlocked.has(id)) return;
 
-            // Trigger Toast UI
+            // If cache is not ready yet, we can't be sure if it's new, but we shouldn't spam.
+            // Best approach: Add to sessionUnlocked optimistically to prevent duplicate calls.
+            sessionUnlocked.add(id);
+
+            // Trigger Popup Event 
             const achievement = ACHIEVEMENTS[id];
-            showToast(`업적 달성: ${achievement.title}`);
+            window.dispatchEvent(new CustomEvent('achievement-unlocked', {
+                detail: { ...achievement }
+            }));
 
-            // Update Firestore
-            await updateDoc(userRef, {
+            // If we have a cache, update it
+            if (cachedAchievements) {
+                cachedAchievements.push(id);
+                localStorage.setItem('my_achievements', JSON.stringify(cachedAchievements));
+            }
+
+            // Update Firestore in Background
+            const userRef = doc(db, "users", user.uid);
+            // Fire and forget - don't await to avoid blocking game loop if possible
+            setDoc(userRef, {
                 achievements: arrayUnion(id)
-            });
+            }, { merge: true }).catch(err => console.error("Achievement save failed:", err));
         };
 
-        // Logic Mapping
+        // 3. Logic Mapping
         switch (type) {
             case 'LOGIN':
                 await unlock(ACHIEVEMENTS.FIRST_STEP.id);
@@ -65,6 +109,7 @@ export const checkAchievement = async (type, value = null) => {
                 await unlock(ACHIEVEMENTS.RUNNER.id);
                 break;
             case 'GAME_SCORE':
+                // Check score >= 100 for High Score
                 if (value >= 100) await unlock(ACHIEVEMENTS.HIGH_SCORE.id);
                 break;
             case 'TOUCH_CHARACTER':
@@ -80,6 +125,12 @@ export const checkAchievement = async (type, value = null) => {
     } catch (error) {
         console.error("Error checking achievement:", error);
     }
+};
+
+export const resetAchievementCache = () => {
+    cachedAchievements = null;
+    sessionUnlocked.clear();
+    localStorage.removeItem('my_achievements');
 };
 
 export default checkAchievement;
