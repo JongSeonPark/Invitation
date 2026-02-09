@@ -158,8 +158,9 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             isGameOver: false,
             isGameClear: false,
             animationId: null,
-            speed: 8, // Initial speed
-            spawnRate: 18 // Initial spawn rate (frames) - Crazy Mode (2x of previous 3x)
+            speed: 6, // Slower start (was 8)
+            spawnRate: 60, // Slower start (was 18)
+            lastSpawnType: null // Track last spawn for fairness
         };
         setScore(0);
         scoreRef.current = 0;
@@ -242,10 +243,11 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 data.frame++;
 
                 // Difficulty Scaling
-                // Speed increases every 500 frames, max 16
-                data.speed = Math.min(16, 8 + Math.floor(data.frame / 500));
-                // Spawn rate decreases (gets faster) every 300 frames, min 8
-                data.spawnRate = Math.max(8, 18 - Math.floor(data.frame / 300) * 2);
+                // Speed increases every 500 frames, starts at 6, max 16
+                data.speed = Math.min(16, 6 + Math.floor(data.frame / 500));
+
+                // Spawn rate decreases (gets faster) every 300 frames, starts at 60, min 18 (Crazy Mode)
+                data.spawnRate = Math.max(18, 60 - Math.floor(data.frame / 300) * 10);
 
                 data.bgOffset += (data.speed * 0.5) * dt;
 
@@ -273,7 +275,12 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
 
                 // Spawn
                 if (data.frame % data.spawnRate === 0) {
-                    const isItem = Math.random() > 0.4;
+                    // Prevent double obstacles
+                    let isItem = Math.random() > 0.4;
+                    if (data.lastSpawnType === 'obstacle') {
+                        isItem = true; // Force item if last was obstacle
+                    }
+
                     if (isItem) {
                         const items = ['🎟️', '🍔', '✈️', '💍', '💌'];
                         const item = items[Math.floor(Math.random() * items.length)];
@@ -282,6 +289,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                             y: CANVAS_HEIGHT - GROUND_HEIGHT - 60 - (Math.random() * 100),
                             w: 50, h: 50, type: item, vy: Math.sin(data.frame) * 0.5
                         });
+                        data.lastSpawnType = 'item';
                     } else {
                         const obstacles = ['🚧', '🪨', '🔥'];
                         const obs = obstacles[Math.floor(Math.random() * obstacles.length)];
@@ -290,6 +298,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                             y: CANVAS_HEIGHT - GROUND_HEIGHT - 50,
                             w: 50, h: 50, type: obs
                         });
+                        data.lastSpawnType = 'obstacle';
                     }
                 }
 
