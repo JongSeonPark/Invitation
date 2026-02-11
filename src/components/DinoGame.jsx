@@ -63,8 +63,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         const g = data[i + 1];
                         const b = data[i + 2];
 
-                        // If pixel is white (or very close), make it transparent
-                        if (r > 240 && g > 240 && b > 240) {
+                        // If pixel is Magenta (255, 0, 255), make it transparent
+                        if (r === 255 && g === 0 && b === 255) {
                             data[i + 3] = 0;
                         }
                     }
