@@ -20,7 +20,7 @@ import AchievementBoard from '../AchievementBoard';
 import BouquetGame from './BouquetGame';
 import AchievementPopup from '../AchievementPopup';
 
-const LobbyScreen = ({ onSwitchToV1 }) => {
+const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
     const [character, setCharacter] = useState('bride');
     const [showBubble, setShowBubble] = useState(false);
     const [bubbleText, setBubbleText] = useState('');
@@ -50,6 +50,15 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
             unsubscribeDiamonds();
         };
     }, []);
+
+    // Auto-open Story for new users
+    useEffect(() => {
+        if (isNewUser) {
+            setTimeout(() => {
+                toggleModal('story');
+            }, 1000); // Slight delay for effect
+        }
+    }, [isNewUser]);
 
     const toggleCharacter = () => {
         audioManager.playClick();

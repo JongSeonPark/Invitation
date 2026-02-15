@@ -62,22 +62,27 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                 const userRef = doc(db, "users", currentUser.uid);
                 const userSnap = await getDoc(userRef);
 
-                if (!userSnap.exists()) {
+                // Check if new user OR nickname changed (treat as new persona)
+                const isNewUser = !userSnap.exists() || (userSnap.data().nickname !== nickname);
+
+                if (isNewUser) {
+                    // Create or Overwrite with new nickname
                     await setDoc(userRef, {
                         nickname: nickname,
                         achievements: [],
-                        createdAt: new Date()
-                    });
+                        createdAt: new Date(),
+                        lastLogin: new Date()
+                    }, { merge: true });
                 } else {
-                    // Update nickname if changed
-                    await setDoc(userRef, { nickname: nickname }, { merge: true });
+                    // Just update last login
+                    await setDoc(userRef, { lastLogin: new Date() }, { merge: true });
                 }
 
                 // Achievement: FIRST_STEP
                 checkAchievement('LOGIN');
 
                 // Proceed to Game
-                onStart();
+                onStart(isNewUser);
 
             } catch (error) {
                 console.error("Login Failed", error);

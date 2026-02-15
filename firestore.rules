@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper to check if user is accessing their own data
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users Collection (Profile, Diamonds, Achievements)
+    // only the user themselves can read or write their own data
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Scores Collection (Dino Game)
+    // Public Read (Leaderboard), Owner Write (Save Score)
+    match /scores/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+
+    // Bouquet Scores Collection (Bouquet Game)
+    // Public Read (Leaderboard), Owner Write (Save Score)
+    match /bouquet_scores/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+  }
+}

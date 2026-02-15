@@ -4,8 +4,10 @@ import LobbyScreen from '../components/v2/LobbyScreen';
 
 const Version2 = ({ onSwitchToV1 }) => {
     const [scene, setScene] = useState('title'); // 'title', 'lobby'
+    const [isNewUser, setIsNewUser] = useState(false);
 
-    const handleStartGame = () => {
+    const handleStartGame = (newUser = false) => {
+        setIsNewUser(newUser);
         setScene('lobby');
     };
 
@@ -19,7 +21,7 @@ const Version2 = ({ onSwitchToV1 }) => {
             {/* Content Container */}
             <div className="relative w-full h-full">
                 {scene === 'title' && <TitleScreen onStart={handleStartGame} onSwitchToV1={onSwitchToV1} />}
-                {scene === 'lobby' && <LobbyScreen onSwitchToV1={onSwitchToV1} />}
+                {scene === 'lobby' && <LobbyScreen onSwitchToV1={onSwitchToV1} isNewUser={isNewUser} />}
             </div>
         </div>
     );
