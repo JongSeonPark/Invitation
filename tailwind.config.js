@@ -15,7 +15,7 @@ export default {
                 'soft-pink': '#FFD6E0', // Kept as requested in Master file notes
             },
             fontFamily: {
-                heading: ['"Great Vibes"', 'cursive'],
+                heading: ['"Cormorant Infant"', 'serif'],
                 body: ['"Cormorant Infant"', 'serif'],
                 classic: ['"Gowun Batang"', 'serif'],
                 pixel: ['"NeoDunggeunmoPro-Regular"', '"Silkscreen"', 'cursive'],

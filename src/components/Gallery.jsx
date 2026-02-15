@@ -58,7 +58,7 @@ const Gallery = ({ forceUnlock = false, rarityFilter = null, showRarity = false 
                     소중한 추억 {forceUnlock ? '' : `(${unlockedIndices.length}/${images.length})`}
                 </p>
 
-                <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
+                <div className="columns-3 gap-2 md:gap-4 lg:gap-6 space-y-2 md:space-y-4 lg:space-y-6">
                     {images
                         .filter(img => !rarityFilter || img.rarity === rarityFilter)
                         .sort((a, b) => {
