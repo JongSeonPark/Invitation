@@ -71,7 +71,6 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                         achievements: [],
                         collection: [],
                         diamonds: 0,
-                        storySeen: false,
                         createdAt: new Date(),
                         lastLogin: new Date()
                     };
@@ -98,6 +97,10 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                     // Sync Collection
                     const col = userData.collection || [];
                     localStorage.setItem('wedding_collection_v2', JSON.stringify(col));
+
+                    // Check Collection Achievement on Login (in case unlocked elsewhere)
+                    checkAchievement('CHECK_COLLECTION', col);
+
                     window.dispatchEvent(new Event('collectionUpdated'));
 
                     // Note: Diamonds are mostly read directly from DB in components, 

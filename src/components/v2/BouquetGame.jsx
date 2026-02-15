@@ -21,6 +21,7 @@ const BouquetGame = ({ onClose }) => {
     const gameStateRef = useRef('start');
     const playerRef = useRef(50);
     const itemsRef = useRef([]);
+    const lastTimeRef = useRef(0);
 
     // Asset
     const bgImage = new URL('../../assets/pixel_castle_bg.png', import.meta.url).href;
@@ -71,11 +72,23 @@ const BouquetGame = ({ onClose }) => {
         itemsRef.current.push(newItem);
     };
 
-    const updateGame = () => {
+    const updateGame = (time) => {
         if (gameStateRef.current !== 'playing') return;
 
+        // Calculate Delta Time
+        const now = time || performance.now();
+        // Store lastTime directly on the ref function to persist across calls without extra state
+        // But functions are immutable? No, generic object property.
+        // Safer to use a ref for lastTime
+
+        // Actually, let's use a separate ref for lastTime
+        if (!lastTimeRef.current) lastTimeRef.current = now;
+        const dt = Math.min((now - lastTimeRef.current) / 16, 2); // Normalize to ~1 at 60fps, cap at 2x
+        lastTimeRef.current = now;
+
         // Speed increases with score
-        const speedBase = 0.4 + (scoreRef.current * 0.05);
+        // Base speed 0.4 per frame at 60fps.
+        const speedBase = (0.4 + (scoreRef.current * 0.05)) * dt;
         let gameOverTriggered = false;
 
         itemsRef.current = itemsRef.current.filter(item => {

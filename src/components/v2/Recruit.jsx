@@ -7,6 +7,7 @@ import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 
 // Import image loader
 import { loadWeddingImages as loadImages } from '../../utils/imageLoader';
+import { checkAchievement } from '../../utils/achievementManager';
 
 const images = loadImages();
 
@@ -69,6 +70,8 @@ const Recruit = () => {
                 if (!savedCollection.includes(randomImage.path)) {
                     savedCollection.push(randomImage.path);
                     localStorage.setItem('wedding_collection_v2', JSON.stringify(savedCollection));
+                    // Check Collection Achievement
+                    checkAchievement('CHECK_COLLECTION', savedCollection);
                 }
 
                 // Push result
@@ -115,7 +118,7 @@ const Recruit = () => {
             {results.length === 0 && !isAnimating && (
                 <div className="z-10 flex flex-col items-center w-full max-w-sm animate-in zoom-in duration-500 font-['Silkscreen']">
                     <div className="mb-4 text-center bg-black/60 backdrop-blur-md border-[6px] border-white px-8 py-6 rounded-2xl shadow-[8px_8px_0_rgba(0,0,0,0.5)]">
-                        <h2 className="text-3xl text-yellow-400 mb-2 drop-shadow-md tracking-wider font-['Silkscreen']">LUCKY DRAW</h2>
+                        <h2 className="text-3xl text-yellow-400 mb-2 drop-shadow-md tracking-wider font-['Silkscreen']">WEDDING PHOTO</h2>
                         <p className="text-white text-sm">다이아몬드를 사용해 추억을 모아보세요!</p>
                     </div>
 

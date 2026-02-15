@@ -2,36 +2,36 @@ export const storyData = [
     {
         id: 1,
         speaker: "신랑",
-        text: "하객님! 이곳까지 오시느라 고생 많으셨습니다.",
-        image: "groom", // groom or bride
+        text: "귀한 발걸음 해주셔서 진심으로 감사합니다! 저희의 결혼식에 오신 것을 환영합니다.",
+        image: "groom",
         expression: "smile"
     },
     {
         id: 2,
         speaker: "신부",
-        text: "저희 두 사람의 새로운 시작을 함께 해주신다니 정말 기뻐요!",
+        text: "먼 길 오시느라 고생하셨죠? 기다리시는 동안 지루하지 않게 작은 선물들을 준비했어요.",
         image: "bride",
         expression: "happy"
     },
     {
         id: 3,
         speaker: "신랑",
-        text: "이 청첩장은 단순한 초대장이 아닙니다. 저희의 추억과 감사를 담은 '비밀 작전'이죠.",
+        text: "신나는 '달리기'와 '부케 받기' 미니 게임을 즐기며 숨겨진 '업적'도 찾아보세요!",
         image: "groom",
         expression: "serious"
     },
     {
         id: 4,
         speaker: "신부",
-        text: "갤러리에서 사진도 모으고, 방명록도 남겨주실 거죠?",
+        text: "그리고 '사진 뽑기'에서 저희의 특별한 사진들도 모아보실 수 있답니다. (예쁜 사진이 많아요!)",
         image: "bride",
         expression: "wink"
     },
     {
         id: 5,
-        speaker: "SYSTEM",
-        text: "작전명 [백년가약] 승인 완료. 결혼식장에서 뵙겠습니다!",
-        image: "system",
-        expression: "none"
+        speaker: "함께",
+        text: "저희 두 사람의 행복한 시작을 함께 축하해주세요. 그럼 예식장에서 뵙겠습니다!",
+        image: "groom",
+        expression: "smile"
     }
 ];

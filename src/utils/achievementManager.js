@@ -1,6 +1,7 @@
 import { db, auth } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { showToast } from '../components/GlobalToast';
+import { loadWeddingImages } from './imageLoader';
 
 export const ACHIEVEMENTS = {
     FIRST_STEP: {
@@ -22,6 +23,16 @@ export const ACHIEVEMENTS = {
         id: 'WEDDING_CRASHER',
         title: '축하의 손길',
         desc: '로비의 신랑과 신부를 각각 5번씩 터치해보세요!'
+    },
+    COLLECTOR_R: {
+        id: 'COLLECTOR_R',
+        title: '소소한 수집가',
+        desc: '모든 R등급 카드를 획득했습니다.'
+    },
+    COLLECTOR_MASTER: {
+        id: 'COLLECTOR_MASTER',
+        title: '추억의 달인',
+        desc: '모든 카드를 수집했습니다! (총 18장)'
     }
 };
 
@@ -121,7 +132,20 @@ export const checkAchievement = async (type, value = null) => {
                 // Check score >= 30 for Bouquet Catch
                 if (value >= 30) await unlock(ACHIEVEMENTS.BOUQUET_CATCHER.id);
                 break;
-            default:
+            case 'CHECK_COLLECTION':
+                // value = array of collected paths
+                if (!value || !Array.isArray(value)) return;
+
+                const allImages = loadWeddingImages();
+
+                // 1. All R Grade
+                const allR = allImages.filter(img => img.rarity === 'R');
+                const hasAllR = allR.every(img => value.includes(img.path));
+                if (hasAllR) await unlock(ACHIEVEMENTS.COLLECTOR_R.id);
+
+                // 2. All Photos (Master)
+                const hasAll = allImages.every(img => value.includes(img.path));
+                if (hasAll) await unlock(ACHIEVEMENTS.COLLECTOR_MASTER.id);
                 break;
         }
 

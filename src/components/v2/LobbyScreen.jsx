@@ -89,7 +89,22 @@ const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
         const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
         setBubbleText(randomQuote);
         setShowBubble(true);
-        checkAchievement('TOUCH_CHARACTER', { [character]: 1 }); // Simple trigger
+
+        // Track Touches for Achievement (Wedding Crasher)
+        const storageKey = 'wedding_touch_counts';
+        let counts = { groom: 0, bride: 0 };
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) counts = JSON.parse(saved);
+        } catch (e) { console.error(e); }
+
+        // Increment
+        counts[character] = (counts[character] || 0) + 1;
+        localStorage.setItem(storageKey, JSON.stringify(counts));
+
+        // Check Achievement with TOTAL counts
+        checkAchievement('TOUCH_CHARACTER', counts);
+
         setTimeout(() => setShowBubble(false), 3000);
     };
 
@@ -101,14 +116,14 @@ const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
     const closeModal = () => {
         audioManager.playClick();
 
-        // If closing Story modal, mark as seen in Firestore
-        if (activeModal === 'story') {
-            const user = auth.currentUser;
-            if (user) {
-                const userRef = doc(db, "users", user.uid);
-                updateDoc(userRef, { storySeen: true }).catch(e => console.error(e));
-            }
-        }
+        // If closing Story modal, mark as seen in Firestore - REMOVED per user request
+        // if (activeModal === 'story') {
+        //     const user = auth.currentUser;
+        //     if (user) {
+        //         const userRef = doc(db, "users", user.uid);
+        //         updateDoc(userRef, { storySeen: true }).catch(e => console.error(e));
+        //     }
+        // }
 
         setActiveModal(null);
     };
@@ -122,12 +137,12 @@ const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
         switch (modal) {
             case 'map': return '오시는 길';
             case 'gallery': return '웨딩 앨범';
-            case 'recruit': return '축하 메시지';
+            case 'recruit': return '행운의 사진 뽑기';
             case 'story': return '초대글';
             case 'ranking': return '랭킹';
             case 'achievement': return '업적';
             case 'info': return '플레이어 정보';
-            case 'game': return '미니 게임';
+            case 'game': return '신랑 입장';
             case 'bouquet': return '부케 던지기';
             default: return '';
         }
@@ -165,7 +180,7 @@ const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
                         onClick={toggleCharacter}
                         className="bg-blue-600 border-b-4 border-r-4 border-blue-800 text-white px-3 py-1 text-xs hover:bg-blue-500 active:border-b-0 active:border-r-0 active:translate-y-1 transition-all"
                     >
-                        SWITCH CHAR
+                        캐릭터 변경
                     </button>
                     <button
                         onClick={handleSwitchToV1}
@@ -204,10 +219,10 @@ const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
             <div className="absolute top-1/2 right-4 -translate-y-1/2 flex flex-col gap-3 pointer-events-auto z-40">
                 <MenuButton icon="🗺️" label="오시는 길" onClick={() => toggleModal('map')} />
                 <MenuButton icon="📷" label="웨딩 앨범" onClick={() => toggleModal('gallery')} />
+                <MenuButton icon="🔮" label="사진 뽑기" onClick={() => toggleModal('recruit')} />
                 <MenuButton icon="📖" label="초대글" onClick={() => toggleModal('story')} />
                 <MenuButton icon="🏆" label="랭킹" onClick={() => toggleModal('ranking')} />
                 <MenuButton icon="🎖️" label="업적" onClick={() => toggleModal('achievement')} />
-                <MenuButton icon="💌" label="방명록" onClick={() => toggleModal('recruit')} />
             </div>
 
             {/* Bottom Controls - Dual Game Buttons */}
