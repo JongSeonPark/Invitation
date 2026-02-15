@@ -10,7 +10,7 @@ const Info = () => {
                 <div style={styles.divider}></div>
                 <div style={styles.item}>
                     <h3 style={styles.label}>장소</h3>
-                    <p style={styles.value}>빌라드 지디 안산</p>
+                    <p style={styles.value}>빌라드 지디 안산 7층 캘리홀</p>
                     <p style={styles.subValue}>경기 안산시 단원구 광덕4로 140</p>
                 </div>
             </div>

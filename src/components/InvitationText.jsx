@@ -18,13 +18,10 @@ const InvitationText = () => {
                 </div>
 
                 <div className="font-classic text-xl leading-loose text-text/80 mb-12 space-y-2">
-                    <p>서로가 마주보며 다져온 사랑을</p>
-                    <p>이제 함께 한 곳을 바라보며</p>
-                    <p>걸어가려 합니다.</p>
-                    <br />
-                    <p>저희 두 사람의 새로운 시작을</p>
-                    <p>가까이서 축복해 주시면</p>
-                    <p>더없는 기쁨으로 간직하겠습니다.</p>
+                    <p>사랑과 신뢰를 바탕으로 저희 두사람</p>
+                    <p>가족으로 하나가 되려합니다.</p>
+                    <p>귀한 걸음으로 오셔서</p>
+                    <p>저희의 시작을 지켜봐주세요.</p>
                 </div>
 
                 <div className="flex flex-col items-center gap-4 font-classic text-xl">

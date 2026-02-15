@@ -58,15 +58,20 @@ const Gallery = ({ forceUnlock = false, rarityFilter = null, showRarity = false 
                     소중한 추억 {forceUnlock ? '' : `(${unlockedIndices.length}/${images.length})`}
                 </p>
 
-                <div className="columns-3 gap-2 md:gap-4 lg:gap-6 space-y-2 md:space-y-4 lg:space-y-6">
+                <div className="grid grid-cols-3 gap-2 md:gap-4 lg:gap-6">
                     {images
                         .filter(img => !rarityFilter || img.rarity === rarityFilter)
                         .sort((a, b) => {
                             const rarityOrder = { 'SSR': 3, 'SR': 2, 'R': 1 };
                             const rarityA = a.rarity.includes('SSR') ? 'SSR' : a.rarity.includes('SR') ? 'SR' : 'R';
                             const rarityB = b.rarity.includes('SSR') ? 'SSR' : b.rarity.includes('SR') ? 'SR' : 'R';
-                            // Sort R -> SR -> SSR (Ascending order of value) - User request
-                            return rarityOrder[rarityA] - rarityOrder[rarityB];
+
+                            // 1. Primary Sort: Rarity (Ascending: R -> SR -> SSR)
+                            const rarityDiff = rarityOrder[rarityA] - rarityOrder[rarityB];
+                            if (rarityDiff !== 0) return rarityDiff;
+
+                            // 2. Secondary Sort: Filename/Path (Ascending)
+                            return a.path.localeCompare(b.path);
                         })
                         .map((img, index) => {
                             const isUnlocked = forceUnlock || unlockedIndices.includes(img.path);
@@ -96,7 +101,7 @@ const Gallery = ({ forceUnlock = false, rarityFilter = null, showRarity = false 
                                 <div
                                     key={img.path}
                                     className={`
-                                        break-inside-avoid group relative rounded-2xl overflow-hidden shadow-soft-md hover:shadow-soft-xl transition-all duration-500 hover:-translate-y-1 bg-white
+                                        group relative rounded-2xl overflow-hidden shadow-soft-md hover:shadow-soft-xl transition-all duration-500 hover:-translate-y-1 bg-white
                                         ${showRarity && isUnlocked ? `border-[3px] ${rarityBorder[currentRarity]}` : ''}
                                     `}
                                     onClick={() => isUnlocked && setSelectedImage(img.src)}
@@ -116,13 +121,13 @@ const Gallery = ({ forceUnlock = false, rarityFilter = null, showRarity = false 
                                         </div>
                                     )}
 
-                                    <div className="relative overflow-hidden">
+                                    <div className="relative overflow-hidden aspect-square">
                                         <img
                                             src={img.src}
                                             alt={`Gallery ${index + 1}`}
-                                            className={`w-full h-auto object-cover transition-all duration-700 
+                                            className={`w-full h-full object-cover transition-all duration-700 
                                                 ${isUnlocked
-                                                    ? 'cursor-pointer hover:scale-105 filter brightness-100'
+                                                    ? 'cursor-pointer hover:scale-110 filter brightness-100'
                                                     : 'blur-xl grayscale contrast-125 cursor-not-allowed opacity-50'
                                                 }
                                             `}
