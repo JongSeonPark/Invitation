@@ -202,13 +202,14 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     };
 
     const saveScore = async (finalScore) => {
-        const user = auth.currentUser;
-        if (!user) return;
+        const nickname = localStorage.getItem('wedding_nickname');
+        if (!nickname) return;
         try {
-            const scoreRef = doc(db, "scores", user.uid);
+            // Use Nickname as ID for Score Doc
+            const scoreRef = doc(db, "scores", nickname);
             await setDoc(scoreRef, {
-                uid: user.uid,
-                displayName: user.displayName || 'Guest',
+                uid: auth.currentUser?.uid || 'anon',
+                displayName: nickname,
                 score: finalScore,
                 timestamp: serverTimestamp()
             }, { merge: true });

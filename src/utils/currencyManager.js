@@ -3,12 +3,12 @@ import { doc, getDoc, updateDoc, increment, runTransaction, onSnapshot } from "f
 
 // Add Diamonds (Earning)
 export const addDiamonds = async (amount) => {
-    const user = auth.currentUser;
-    if (!user) return;
+    const nickname = localStorage.getItem('wedding_nickname');
+    if (!nickname) return;
     if (amount <= 0) return;
 
     try {
-        const userRef = doc(db, "users", user.uid);
+        const userRef = doc(db, "users", nickname);
         await updateDoc(userRef, {
             diamonds: increment(amount)
         });
@@ -20,10 +20,10 @@ export const addDiamonds = async (amount) => {
 
 // Spend Diamonds (Spending)
 export const spendDiamonds = async (amount) => {
-    const user = auth.currentUser;
-    if (!user) return false;
+    const nickname = localStorage.getItem('wedding_nickname');
+    if (!nickname) return false;
 
-    const userRef = doc(db, "users", user.uid);
+    const userRef = doc(db, "users", nickname);
 
     try {
         const success = await runTransaction(db, async (transaction) => {
@@ -52,13 +52,13 @@ export const spendDiamonds = async (amount) => {
 
 // Listen to Balance (Real-time UI)
 export const subscribeToDiamonds = (callback) => {
-    const user = auth.currentUser;
-    if (!user) {
+    const nickname = localStorage.getItem('wedding_nickname');
+    if (!nickname) {
         callback(0);
         return () => { };
     }
 
-    const userRef = doc(db, "users", user.uid);
+    const userRef = doc(db, "users", nickname);
     const unsubscribe = onSnapshot(userRef, (doc) => {
         if (doc.exists()) {
             callback(doc.data().diamonds || 0);

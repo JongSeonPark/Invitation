@@ -6,7 +6,7 @@ const RankingBoard = () => {
     const [rankings, setRankings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [gameType, setGameType] = useState('run'); // 'run' or 'bouquet'
-    const currentUser = auth.currentUser;
+    const currentNickname = localStorage.getItem('wedding_nickname');
 
     useEffect(() => {
         const fetchRankings = async () => {
@@ -98,9 +98,9 @@ const RankingBoard = () => {
                             </thead>
                             <tbody>
                                 {rankings.map((user, index) => {
-                                    const isMe = currentUser && (
-                                        currentUser.uid === user.id ||
-                                        currentUser.displayName === user.displayName
+                                    const isMe = currentNickname && (
+                                        user.displayName === currentNickname ||
+                                        user.id === currentNickname
                                     );
 
                                     const getRankColor = (idx) => {

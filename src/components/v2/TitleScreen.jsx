@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../firebase';
 import { signInAnonymously, onAuthStateChanged, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
 import { checkAchievement } from '../../utils/achievementManager';
 
 const TitleScreen = ({ onStart, onSwitchToV1 }) => {
@@ -48,34 +48,60 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                 let currentUser = auth.currentUser;
 
                 if (!currentUser) {
-                    // Sign In Anonymously if not logged in
+                    // Sign In Anonymously (Just for connection)
                     const result = await signInAnonymously(auth);
                     currentUser = result.user;
                 }
 
-                // 2. Update Profile with Nickname
-                await updateProfile(currentUser, {
-                    displayName: nickname
-                });
+                // 2. Use Nickname as the Primary Key
+                const safeNickname = nickname.trim();
+                localStorage.setItem('wedding_nickname', safeNickname); // Save globally
 
-                // 3. Ensure Firestore Document Exists
-                const userRef = doc(db, "users", currentUser.uid);
+                // 3. Check Firestore (users/{nickname})
+                const userRef = doc(db, "users", safeNickname);
                 const userSnap = await getDoc(userRef);
 
-                // Check if new user OR nickname changed (treat as new persona)
-                const isNewUser = !userSnap.exists() || (userSnap.data().nickname !== nickname);
+                let userData = userSnap.exists() ? userSnap.data() : null;
+                const isNewUser = !userData;
 
                 if (isNewUser) {
-                    // Create or Overwrite with new nickname
-                    await setDoc(userRef, {
-                        nickname: nickname,
+                    // Create New User Data
+                    const initialData = {
+                        nickname: safeNickname,
                         achievements: [],
+                        collection: [],
+                        diamonds: 0,
+                        storySeen: false,
                         createdAt: new Date(),
                         lastLogin: new Date()
-                    }, { merge: true });
+                    };
+
+                    await setDoc(userRef, initialData);
+
+                    // Clear local storage to avoid conflicts
+                    localStorage.removeItem('wedding_collection_v2');
+                    localStorage.removeItem('my_achievements');
+
+                    userData = initialData; // Local reference
                 } else {
-                    // Just update last login
+                    // Update Last Login
                     await setDoc(userRef, { lastLogin: new Date() }, { merge: true });
+                }
+
+                // 4. SYNC DATA (Firestore -> LocalStorage)
+                // This ensures "Same Nickname = Same Data" on any device
+                if (userData) {
+                    // Sync Achievements
+                    const ach = userData.achievements || [];
+                    localStorage.setItem('my_achievements', JSON.stringify(ach));
+
+                    // Sync Collection
+                    const col = userData.collection || [];
+                    localStorage.setItem('wedding_collection_v2', JSON.stringify(col));
+                    window.dispatchEvent(new Event('collectionUpdated'));
+
+                    // Note: Diamonds are mostly read directly from DB in components, 
+                    // or via listeners, so no strict need to sync to LS unless for offline fallback.
                 }
 
                 // Achievement: FIRST_STEP

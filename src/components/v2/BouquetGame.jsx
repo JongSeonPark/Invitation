@@ -114,13 +114,14 @@ const BouquetGame = ({ onClose }) => {
     };
 
     const saveScore = async (finalScore) => {
-        const user = auth.currentUser;
-        if (!user) return;
+        const nickname = localStorage.getItem('wedding_nickname');
+        if (!nickname) return;
         try {
-            const scoreRef = doc(db, "bouquet_scores", user.uid);
+            // Use Nickname as ID for Score Doc too, easier to track
+            const scoreRef = doc(db, "bouquet_scores", nickname);
             await setDoc(scoreRef, {
-                uid: user.uid,
-                displayName: user.displayName || 'Guest',
+                uid: auth.currentUser?.uid || 'anon',
+                displayName: nickname,
                 score: finalScore,
                 timestamp: serverTimestamp()
             }, { merge: true });
@@ -134,12 +135,14 @@ const BouquetGame = ({ onClose }) => {
         setGameState(result);
 
         if (result === 'gameover') {
-            addDiamonds(Math.floor(scoreRef.current));
-            saveScore(scoreRef.current);
+            const finalScore = scoreRef.current;
+            addDiamonds(Math.floor(finalScore));
+            saveScore(finalScore);
+            checkAchievement('BOUQUET_GAME_SCORE', finalScore);
         }
 
-        if (result === 'clear') { // Should not happen in loop, but keep for safety
-            checkAchievement('BOUQUET_CATCH');
+        if (result === 'clear') {
+            // clear condition unused in infinite mode
         }
         clearInterval(spawnerRef.current);
         clearInterval(timerRef.current);

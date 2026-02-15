@@ -4,9 +4,9 @@
  */
 export const loadWeddingImages = () => {
     // Import all images from rarity folders
-    const ssrModules = import.meta.glob('/src/assets/images/SSR/*.{jpg,jpeg,png,webp}', { eager: true });
-    const srModules = import.meta.glob('/src/assets/images/SR/*.{jpg,jpeg,png,webp}', { eager: true });
-    const rModules = import.meta.glob('/src/assets/images/R/*.{jpg,jpeg,png,webp}', { eager: true });
+    const ssrModules = import.meta.glob('/src/assets/images/SSR/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', { eager: true });
+    const srModules = import.meta.glob('/src/assets/images/SR/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', { eager: true });
+    const rModules = import.meta.glob('/src/assets/images/R/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', { eager: true });
 
     const formatImages = (modules, rarity) => {
         return Object.entries(modules).map(([path, module]) => ({

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import groomImg from '../../assets/card_images/groom_nobg.png';
 import brideImg from '../../assets/card_images/bride_nobg.png';
 import { subscribeToDiamonds } from '../../utils/currencyManager';
+import { auth, db } from '../../firebase';
+import { doc, updateDoc } from "firebase/firestore";
 
 // Pixel Theme Lobby
 
@@ -98,6 +100,16 @@ const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
 
     const closeModal = () => {
         audioManager.playClick();
+
+        // If closing Story modal, mark as seen in Firestore
+        if (activeModal === 'story') {
+            const user = auth.currentUser;
+            if (user) {
+                const userRef = doc(db, "users", user.uid);
+                updateDoc(userRef, { storySeen: true }).catch(e => console.error(e));
+            }
+        }
+
         setActiveModal(null);
     };
 

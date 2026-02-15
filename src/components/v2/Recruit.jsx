@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { audioManager } from '../../utils/audioManager';
 import { spendDiamonds } from '../../utils/currencyManager';
+import { auth, db } from '../../firebase';
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 
 // Import image loader
 import { loadWeddingImages as loadImages } from '../../utils/imageLoader';
@@ -72,6 +74,7 @@ const Recruit = () => {
                 // Push result
                 newResults.push({
                     image: randomImage.src,
+                    originalPath: randomImage.path,
                     rarity: targetRarity === 'SSR' ? 'SSR/최고' : targetRarity === 'SR' ? 'SR/희귀' : 'R/보통',
                     originalRarity: targetRarity
                 });
@@ -83,6 +86,23 @@ const Recruit = () => {
             setResults(newResults);
             setIsAnimating(false);
             audioManager.playConfirm();
+
+            // Save to Firestore (Background)
+            const nickname = localStorage.getItem('wedding_nickname');
+            if (nickname && newResults.length > 0) {
+                const userRef = doc(db, "users", nickname);
+                const newPaths = newResults.map(r => r.image.split('assets/')[1] ? `assets/${r.image.split('assets/')[1]}` : r.image);
+
+                // We store relative paths or identifiers. 
+                // Currently logic uses full path or relative. Let's stick to what was in localStorage:
+                // localStorage logic used: randomImage.path
+
+                const pathsToSave = newResults.map(r => r.originalPath);
+
+                updateDoc(userRef, {
+                    collection: arrayUnion(...pathsToSave)
+                }).catch(err => console.error("Error saving collection to Firestore:", err));
+            }
         }, 2000);
     };
 
