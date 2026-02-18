@@ -23,8 +23,6 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const brideSheet = useRef(new Image());
     const bgImage = useRef(new Image());
 
-    // Cache for pre-rendered emojis
-    const emojiCache = useRef({});
 
     useEffect(() => {
         let loaded = 0;
@@ -86,22 +84,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
         loadSprite(groomSheet, groomSprites);
         loadSprite(brideSheet, brideSprites);
 
-        // Pre-render Emojis
-        const emojis = ['🎟️', '🍔', '✈️', '💍', '💌', '🚧', '🌵', '🔥'];
-        emojis.forEach(emoji => {
-            const c = document.createElement('canvas');
-            c.width = 50;
-            c.height = 50;
-            const cx = c.getContext('2d');
-            cx.font = '40px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'; // Improved Font Stack for Emojis
-            cx.textAlign = 'center';
-            cx.textBaseline = 'middle';
-            cx.fillText(emoji, 25, 27);
-            const img = new Image();
-            img.src = c.toDataURL();
-            emojiCache.current[emoji] = img;
-        });
-
+        loadSprite(groomSheet, groomSprites);
+        loadSprite(brideSheet, brideSprites);
     }, []);
 
     // Game Constants
@@ -159,6 +143,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             isGameClear: false,
             animationId: null,
             speed: 6,
+            runTime: 0,
             spawnTimer: 0, // Time-based spawner
             lastSpawnType: null
         };
@@ -243,9 +228,12 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             if (!data.isGameClear && !data.isGameOver) {
                 data.frame++; // Keep for animations
 
-                // Difficulty Scaling (Score-based)
-                const scoreDifficulty = Math.floor(scoreRef.current / 100);
-                data.speed = Math.min(16, 6 + scoreDifficulty);
+                data.runTime += dt * 16; // ms
+
+                // Difficulty Scaling (Time-based now!)
+                // Increase speed every 5 seconds
+                const timeDifficulty = Math.floor(data.runTime / 5000);
+                data.speed = Math.min(22, 6 + (timeDifficulty * 1.5));
 
                 data.bgOffset += (data.speed * 0.5) * dt;
 
@@ -270,10 +258,11 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                     data.dino.grounded = true;
                 }
 
-                // Spawn Logic (Time-based)
-                const minSpawnTime = 400; // ms
-                const maxSpawnTime = 900; // ms
-                const currentSpawnInterval = Math.max(minSpawnTime, maxSpawnTime - (scoreDifficulty * 50));
+                // Spawn Logic (Time-based) - Reduced spacing by ~25%
+                const minSpawnTime = 300; // was 400
+                const maxSpawnTime = 650; // was 900
+                // Use timeDifficulty for Spawn Rate too
+                const currentSpawnInterval = Math.max(minSpawnTime, maxSpawnTime - (timeDifficulty * 40));
 
                 data.spawnTimer -= (dt * 16);
                 if (data.spawnTimer <= 0) {
@@ -292,7 +281,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         });
                         data.lastSpawnType = 'item';
                     } else {
-                        const obstacles = ['🚧', '🪨', '🔥'];
+                        // Use safer emojis for Windows compatibility
+                        const obstacles = ['🔥', '💣'];
                         const obs = obstacles[Math.floor(Math.random() * obstacles.length)];
                         data.obstacles.push({
                             x: CANVAS_WIDTH,
@@ -328,7 +318,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         setScore(prev => {
                             const newScore = prev + 1;
                             scoreRef.current = newScore;
-                            if (newScore === 100) checkAchievement('GAME_SCORE', newScore);
+                            checkAchievement('GAME_SCORE', newScore);
                             return newScore;
                         });
                         for (let i = 0; i < 5; i++) {
@@ -396,19 +386,16 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             // Objects
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = '40px Silkscreen'; // Pixel Font
+            ctx.font = '40px "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
 
-
-            // Objects (Draw Images from Cache)
+            // Objects (Draw Text Directly)
             data.items.forEach(item => {
-                if (!item.collected && emojiCache.current[item.type]) {
-                    ctx.drawImage(emojiCache.current[item.type], item.x, item.y, item.w, item.h);
+                if (!item.collected) {
+                    ctx.fillText(item.type, item.x + item.w / 2, item.y + item.h / 2 + 5);
                 }
             });
             data.obstacles.forEach(obs => {
-                if (emojiCache.current[obs.type]) {
-                    ctx.drawImage(emojiCache.current[obs.type], obs.x, obs.y, obs.w, obs.h);
-                }
+                ctx.fillText(obs.type, obs.x + obs.w / 2, obs.y + obs.h / 2 + 5);
             });
 
             // Player

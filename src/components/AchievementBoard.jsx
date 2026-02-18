@@ -10,9 +10,14 @@ const AchievementBoard = () => {
 
     useEffect(() => {
         const fetchAchievements = async () => {
-            if (!currentUser) return;
+            const nickname = localStorage.getItem('wedding_nickname');
+            if (!nickname) {
+                setLoading(false);
+                return;
+            }
+
             try {
-                const docRef = doc(db, "users", currentUser.uid);
+                const docRef = doc(db, "users", nickname);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
@@ -26,7 +31,7 @@ const AchievementBoard = () => {
         };
 
         fetchAchievements();
-    }, [currentUser]);
+    }, []);
 
     const achievementList = Object.values(ACHIEVEMENTS);
 

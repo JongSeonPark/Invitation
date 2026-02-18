@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { audioManager } from '../../utils/audioManager';
 import { storyData } from '../../data/storyData';
 import groomImg from '../../assets/card_images/groom_nobg.png';
@@ -8,6 +8,7 @@ const StoryMode = ({ onClose }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [displayedText, setDisplayedText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const timerRef = useRef(null);
 
     const currentLine = storyData[currentIndex];
 
@@ -21,22 +22,27 @@ const StoryMode = ({ onClose }) => {
         let charIndex = 0;
         const speed = 30;
 
-        const timer = setInterval(() => {
+        if (timerRef.current) clearInterval(timerRef.current);
+
+        timerRef.current = setInterval(() => {
             charIndex++;
             setDisplayedText(text.slice(0, charIndex));
 
             if (charIndex >= text.length) {
-                clearInterval(timer);
+                clearInterval(timerRef.current);
                 setIsTyping(false);
             }
         }, speed);
 
-        return () => clearInterval(timer);
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
     }, [currentIndex]);
 
     const handleNext = () => {
         audioManager.playClick();
         if (isTyping) {
+            if (timerRef.current) clearInterval(timerRef.current); // Stop typing immediately
             setDisplayedText(currentLine.text);
             setIsTyping(false);
         } else {
@@ -58,13 +64,21 @@ const StoryMode = ({ onClose }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
 
             {/* Character Sprite Area */}
-            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 h-[85%] flex items-end transition-transform duration-300 z-0">
-                <img
-                    src={currentLine.image === 'groom' ? groomImg : currentLine.image === 'bride' ? brideImg : ''}
-                    alt="Character"
-                    className={`h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.2)] ${!currentLine.image || currentLine.image === 'system' ? 'hidden' : ''}`}
-                    key={currentIndex}
-                />
+            {/* Character Sprite Area */}
+            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 h-[85%] flex items-end justify-center transition-transform duration-300 z-0 gap-4">
+                {currentLine.image === 'both' ? (
+                    <>
+                        <img src={groomImg} alt="Groom" className="h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
+                        <img src={brideImg} alt="Bride" className="h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
+                    </>
+                ) : (
+                    <img
+                        src={currentLine.image === 'groom' ? groomImg : currentLine.image === 'bride' ? brideImg : ''}
+                        alt="Character"
+                        className={`h-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.2)] ${!currentLine.image || currentLine.image === 'system' ? 'hidden' : ''}`}
+                        key={currentIndex}
+                    />
+                )}
             </div>
 
             {/* Retro Dialogue Box */}

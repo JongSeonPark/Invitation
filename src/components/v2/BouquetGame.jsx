@@ -2,15 +2,59 @@ import { useState, useEffect, useRef } from 'react';
 import { audioManager } from '../../utils/audioManager';
 import { checkAchievement } from '../../utils/achievementManager';
 import { addDiamonds } from '../../utils/currencyManager';
-import brideImg from '../../assets/card_images/bride_nobg.png';
+import brideImg from '../../assets/sprites/bride_pixel.png'; // Pixel Bride
 import { auth, db } from '../../firebase';
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+// Helper to filter magenta
+const ChromaKeySprite = ({ src, filterColor = [255, 0, 255] }) => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        // img.crossOrigin = "Anonymous"; // Caused issues on iOS for local assets
+        img.src = src;
+
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const [rK, gK, bK] = filterColor;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Broader tolerance for magenta and surrounding pinkish artifacts
+                // Target: R=255, G=0, B=255. 
+                // We allow lower R/B and slightly higher G to catch anti-aliasing.
+                if (r > 200 && g < 100 && b > 200) {
+                    // Additional check: Make sure it's dominantly purple/pink
+                    // (R and B should be significantly higher than G)
+                    if ((r - g > 50) && (b - g > 50)) {
+                        data[i + 3] = 0; // Alpha 0
+                    }
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        };
+    }, [src]);
+
+    return <canvas ref={canvasRef} className="w-full h-full object-contain drop-shadow-lg" style={{ imageRendering: 'pixelated' }} />;
+};
 
 const BouquetGame = ({ onClose }) => {
     const [gameState, setGameState] = useState('start'); // start, playing, gameover
     const [score, setScore] = useState(0);
     const [time, setTime] = useState(0); // Seconds
-    const [playerX, setPlayerX] = useState(50); // percentage 0-100
+    const [lane, setLane] = useState(2); // 0, 1, 2, 3, 4 (Center is 2)
     const [items, setItems] = useState([]); // { id, x, y, type: 'bouquet'|'bomb'|'withered' }
 
     // Refs for game loop
@@ -19,29 +63,31 @@ const BouquetGame = ({ onClose }) => {
     const timerRef = useRef(null);
     const scoreRef = useRef(0);
     const gameStateRef = useRef('start');
-    const playerRef = useRef(50);
+    const laneRef = useRef(2); // Track lane
     const itemsRef = useRef([]);
     const lastTimeRef = useRef(0);
 
     // Asset
     const bgImage = new URL('../../assets/pixel_castle_bg.png', import.meta.url).href;
-    const PLAYER_WIDTH = 15; // % of screen width
+    const LANES = 5;
+    const LANE_WIDTH = 100 / LANES; // 20%
+    const PLAYER_WIDTH = 15; // % slightly smaller than lane
 
     // Sync state to refs
     useEffect(() => {
-        playerRef.current = playerX;
-    }, [playerX]);
+        laneRef.current = lane;
+    }, [lane]);
 
     const startGame = () => {
         audioManager.playClick();
         setGameState('playing');
         setScore(0);
         setTime(0);
-        setPlayerX(50);
+        setLane(2);
         setItems([]);
 
         scoreRef.current = 0;
-        playerRef.current = 50;
+        laneRef.current = 2;
         itemsRef.current = [];
         gameStateRef.current = 'playing';
 
@@ -66,9 +112,14 @@ const BouquetGame = ({ onClose }) => {
         const id = Date.now() + Math.random();
         const isBad = Math.random() > 0.6;
         const type = isBad ? (Math.random() > 0.5 ? 'bomb' : 'withered') : 'bouquet';
-        const x = Math.random() * 90;
 
-        const newItem = { id, x, y: -10, type };
+        // Spawn in one of the 5 lanes
+        const randomLane = Math.floor(Math.random() * LANES);
+        // Center of the lane (Lane 0: 0-20 -> Center 10)
+        // Adjust for item width (approx 10%?) -> Center align
+        const x = (randomLane * LANE_WIDTH) + (LANE_WIDTH / 2) - 5; // -5 to center 10% wide item?
+
+        const newItem = { id, x, y: -10, type, lane: randomLane };
         itemsRef.current.push(newItem);
     };
 
@@ -77,17 +128,11 @@ const BouquetGame = ({ onClose }) => {
 
         // Calculate Delta Time
         const now = time || performance.now();
-        // Store lastTime directly on the ref function to persist across calls without extra state
-        // But functions are immutable? No, generic object property.
-        // Safer to use a ref for lastTime
-
-        // Actually, let's use a separate ref for lastTime
         if (!lastTimeRef.current) lastTimeRef.current = now;
-        const dt = Math.min((now - lastTimeRef.current) / 16, 2); // Normalize to ~1 at 60fps, cap at 2x
+        const dt = Math.min((now - lastTimeRef.current) / 16, 2);
         lastTimeRef.current = now;
 
         // Speed increases with score
-        // Base speed 0.4 per frame at 60fps.
         const speedBase = (0.4 + (scoreRef.current * 0.05)) * dt;
         let gameOverTriggered = false;
 
@@ -95,17 +140,13 @@ const BouquetGame = ({ onClose }) => {
             item.y += speedBase;
 
             // Collision Detection
-            if (item.y > 75 && item.y < 98) {
-                const pX = playerRef.current;
-                const itemCenter = item.x + 5;
-                const playerCenter = pX + (PLAYER_WIDTH / 2);
-
-                if (Math.abs(itemCenter - playerCenter) < 10) {
+            if (item.y > 75 && item.y < 95) { // Hitbox check
+                // Check Lane first (simple logic)
+                if (item.lane === laneRef.current) {
                     if (item.type === 'bouquet') {
                         audioManager.playConfirm();
                         scoreRef.current += 1;
                         setScore(scoreRef.current);
-                        // Infinite Mode: No Win Condition
                         return false;
                     } else {
                         audioManager.playDamage();
@@ -170,11 +211,11 @@ const BouquetGame = ({ onClose }) => {
         };
     }, []);
 
-    const handleMove = (delta) => {
+    const handleMove = (direction) => {
         if (gameState !== 'playing') return;
-        setPlayerX(prev => {
-            const next = prev + delta;
-            return Math.max(0, Math.min(100 - PLAYER_WIDTH, next));
+        setLane(prev => {
+            const next = prev + direction;
+            return Math.max(0, Math.min(LANES - 1, next));
         });
     };
 
@@ -184,6 +225,9 @@ const BouquetGame = ({ onClose }) => {
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
+
+    // Render Helpers
+    const getLaneLeft = (i) => (i * LANE_WIDTH);
 
     return (
         <div className="relative w-full h-[400px] bg-sky-200 overflow-hidden font-['Silkscreen'] select-none border-4 border-black">
@@ -216,6 +260,7 @@ const BouquetGame = ({ onClose }) => {
                     <button className="bg-blue-600 border-4 border-white px-8 py-4 text-xl hover:scale-105 active:scale-95 transition-transform animate-pulse">
                         TAP TO START
                     </button>
+                    <p className="mt-4 text-sm text-gray-400">Use Arrows or Tap Sides to Move</p>
                 </div>
             )}
 
@@ -246,18 +291,22 @@ const BouquetGame = ({ onClose }) => {
             {items.map(item => (
                 <div key={item.id}
                     className="absolute text-4xl transition-transform"
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                    style={{ left: `${item.x}%`, top: `${item.y}%`, width: '10%' }}
                 >
                     {item.type === 'bouquet' ? '💐' : item.type === 'bomb' ? '💣' : '🥀'}
                 </div>
             ))}
 
+
             {/* Player Character */}
             <div
-                className="absolute bottom-4 h-24 transition-all duration-75 ease-linear"
-                style={{ left: `${playerX}%`, width: `${PLAYER_WIDTH}%` }}
+                className="absolute bottom-4 h-24 transition-all duration-100 ease-out"
+                style={{
+                    left: `${(lane * LANE_WIDTH) + (LANE_WIDTH - PLAYER_WIDTH) / 2}%`,
+                    width: `${PLAYER_WIDTH}%`
+                }}
             >
-                <img src={brideImg} className="w-full h-full object-contain drop-shadow-lg" style={{ imageRendering: 'pixelated' }} />
+                <ChromaKeySprite src={brideImg} />
                 <div className="absolute bottom-0 w-full text-center text-[10px] text-white/50 backdrop-blur-sm">YOU</div>
             </div>
 
@@ -266,22 +315,22 @@ const BouquetGame = ({ onClose }) => {
                 <>
                     <div
                         className="absolute top-0 bottom-0 left-0 w-1/2 z-30 active:bg-white/5"
-                        onPointerDown={() => handleMove(-10)}
+                        onPointerDown={() => handleMove(-1)}
                     ></div>
                     <div
                         className="absolute top-0 bottom-0 right-0 w-1/2 z-30 active:bg-white/5"
-                        onPointerDown={() => handleMove(10)}
+                        onPointerDown={() => handleMove(1)}
                     ></div>
 
                     <button
                         className="absolute bottom-6 left-4 w-16 h-16 bg-white/40 border-2 border-white rounded-full text-3xl flex items-center justify-center z-40 active:scale-90 transition-transform"
-                        onPointerDown={() => handleMove(-10)}
+                        onPointerDown={() => handleMove(-1)}
                     >
                         ⬅️
                     </button>
                     <button
                         className="absolute bottom-6 right-4 w-16 h-16 bg-white/40 border-2 border-white rounded-full text-3xl flex items-center justify-center z-40 active:scale-90 transition-transform"
-                        onPointerDown={() => handleMove(10)}
+                        onPointerDown={() => handleMove(1)}
                     >
                         ➡️
                     </button>

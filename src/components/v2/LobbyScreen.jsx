@@ -95,7 +95,12 @@ const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
         let counts = { groom: 0, bride: 0 };
         try {
             const saved = localStorage.getItem(storageKey);
-            if (saved) counts = JSON.parse(saved);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Ensure keys exist and are numbers
+                counts.groom = Number(parsed.groom) || 0;
+                counts.bride = Number(parsed.bride) || 0;
+            }
         } catch (e) { console.error(e); }
 
         // Increment

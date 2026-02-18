@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '../../firebase';
 import { signInAnonymously, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { doc, setDoc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
-import { checkAchievement } from '../../utils/achievementManager';
+import { checkAchievement, syncAchievements } from '../../utils/achievementManager';
 
 const TitleScreen = ({ onStart, onSwitchToV1 }) => {
     const [animate, setAnimate] = useState(false);
@@ -90,9 +90,9 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                 // 4. SYNC DATA (Firestore -> LocalStorage)
                 // This ensures "Same Nickname = Same Data" on any device
                 if (userData) {
-                    // Sync Achievements
+                    // Sync Achievements to Memory & LocalStorage
                     const ach = userData.achievements || [];
-                    localStorage.setItem('my_achievements', JSON.stringify(ach));
+                    syncAchievements(ach);
 
                     // Sync Collection
                     const col = userData.collection || [];

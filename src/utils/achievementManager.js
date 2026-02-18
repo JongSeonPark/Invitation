@@ -85,6 +85,13 @@ export const checkAchievement = async (type, value = null) => {
             // Check session Set first (Instant return if already unlocked/fired in this session)
             if (sessionUnlocked.has(id)) return;
 
+            // Check persistent Cache (If already unlocked historically, don't show popup again)
+            // But ensure it's in sessionUnlocked so we don't check again.
+            if (cachedAchievements && cachedAchievements.includes(id)) {
+                sessionUnlocked.add(id);
+                return;
+            }
+
             // If cache is not ready yet, we can't be sure if it's new, but we shouldn't spam.
             // Best approach: Add to sessionUnlocked optimistically to prevent duplicate calls.
             sessionUnlocked.add(id);
@@ -158,6 +165,13 @@ export const resetAchievementCache = () => {
     cachedAchievements = null;
     sessionUnlocked.clear();
     localStorage.removeItem('my_achievements');
+};
+
+export const syncAchievements = (achievements) => {
+    cachedAchievements = achievements || [];
+    sessionUnlocked.clear();
+    cachedAchievements.forEach(id => sessionUnlocked.add(id));
+    localStorage.setItem('my_achievements', JSON.stringify(cachedAchievements));
 };
 
 export default checkAchievement;
