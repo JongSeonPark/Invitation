@@ -27,15 +27,16 @@ const InvitationText = () => {
                     <p>더없는 기쁨으로 간직하겠습니다.</p>
                 </div>
 
-                <div className="flex flex-col items-center gap-4 font-classic text-xl">
-                    <div className="flex items-center gap-3">
-                        <span className="text-base text-primary font-bold tracking-widest">신랑</span>
-                        <strong className="text-text text-2xl font-bold">박종선</strong>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className="text-base text-primary font-bold tracking-widest">신부</span>
-                        <strong className="text-text text-2xl font-bold">윤지수</strong>
-                    </div>
+                <div className="mx-auto w-fit grid grid-cols-[auto_auto_auto_auto] gap-x-2 gap-y-5 font-classic items-center mt-2">
+                    <span className="text-[1.1rem] text-text/80 text-right tracking-[0.1em]">박태만 · 권덕례</span>
+                    <span className="text-base text-text/80 font-light">의</span>
+                    <span className="text-[1.05rem] text-text/80 text-center w-10">아들</span>
+                    <strong className="text-text text-[1.4rem] font-bold ml-1 tracking-[0.15em]">박종선</strong>
+                    
+                    <span className="text-[1.1rem] text-text/80 text-right tracking-[0.1em]">윤상식 · 강미선</span>
+                    <span className="text-base text-text/80 font-light">의</span>
+                    <span className="text-[1.05rem] text-text/80 text-center w-10">딸</span>
+                    <strong className="text-text text-[1.4rem] font-bold ml-1 tracking-[0.15em]">윤지수</strong>
                 </div>
             </div>
         </section>
