@@ -13,7 +13,7 @@ const Version1 = () => {
             <Hero />
             <InvitationText />
             <Info />
-            <Gallery forceUnlock={true} />
+            <Gallery forceUnlock={true} rarityFilter="R" />
             <VideoPlayer />
             <AccountSection />
             <MusicPlayer />

@@ -15,10 +15,10 @@ export default {
                 'soft-pink': '#FFD6E0', // Kept as requested in Master file notes
             },
             fontFamily: {
-                heading: ['"Great Vibes"', 'cursive'],
+                heading: ['"Cormorant Infant"', 'serif'],
                 body: ['"Cormorant Infant"', 'serif'],
                 classic: ['"Gowun Batang"', 'serif'],
-                pixel: ['"DungGeunMo"', '"Silkscreen"', 'cursive'],
+                pixel: ['"NeoDunggeunmoPro-Regular"', '"Silkscreen"', 'cursive'],
             },
             boxShadow: {
                 'soft-sm': 'var(--shadow-sm)',

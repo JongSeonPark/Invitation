@@ -12,7 +12,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const [gameState, setGameState] = useState('START'); // START, PLAYING, GAME_OVER, CLEAR
     const [score, setScore] = useState(0);
     const [time, setTime] = useState(0);
-    const [character, setCharacter] = useState(selectedCharacter);
+    const [character, setCharacter] = useState('groom'); // Force Groom Only
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const timerRef = useRef(null);
     const scoreRef = useRef(0);
@@ -22,6 +22,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const groomSheet = useRef(new Image());
     const brideSheet = useRef(new Image());
     const bgImage = useRef(new Image());
+
 
     useEffect(() => {
         let loaded = 0;
@@ -60,8 +61,8 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         const g = data[i + 1];
                         const b = data[i + 2];
 
-                        // If pixel is white (or very close), make it transparent
-                        if (r > 240 && g > 240 && b > 240) {
+                        // If pixel is Magenta (255, 0, 255), make it transparent
+                        if (r === 255 && g === 0 && b === 255) {
                             data[i + 3] = 0;
                         }
                     }
@@ -83,15 +84,17 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
         loadSprite(groomSheet, groomSprites);
         loadSprite(brideSheet, brideSprites);
 
+        loadSprite(groomSheet, groomSprites);
+        loadSprite(brideSheet, brideSprites);
     }, []);
 
     // Game Constants
     const CANVAS_WIDTH = 800;
-    const CANVAS_HEIGHT = 400;
+    const CANVAS_HEIGHT = 450; // Taller for mobile (16:9)
     const GROUND_HEIGHT = 50;
     const CLEAR_SCORE = 2026;
 
-    const BASE_SIZE = 160;
+    const BASE_SIZE = 140; // Slightly smaller characters for better visibility (was 160)
     const Y_OFFSET = 40;
 
     const gameData = useRef({
@@ -122,7 +125,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
 
         gameData.current = {
             dino: {
-                x: 100,
+                x: 80, // Slightly improved initial X (was 100)
                 y: CANVAS_HEIGHT - GROUND_HEIGHT - currentH,
                 w: currentW,
                 h: currentH,
@@ -139,8 +142,10 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             isGameOver: false,
             isGameClear: false,
             animationId: null,
-            speed: 8, // Initial speed
-            spawnRate: 100 // Initial spawn rate (frames)
+            speed: 6,
+            runTime: 0,
+            spawnTimer: 0, // Time-based spawner
+            lastSpawnType: null
         };
         setScore(0);
         scoreRef.current = 0;
@@ -150,7 +155,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     const jump = () => {
         if (gameData.current.dino.grounded) {
             audioManager.playJump();
-            gameData.current.dino.dy = -18;
+            gameData.current.dino.dy = -15; // Lower jump (was -18)
             gameData.current.dino.grounded = false;
 
             for (let i = 0; i < 5; i++) {
@@ -182,13 +187,14 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     };
 
     const saveScore = async (finalScore) => {
-        const user = auth.currentUser;
-        if (!user) return;
+        const nickname = localStorage.getItem('wedding_nickname');
+        if (!nickname) return;
         try {
-            const scoreRef = doc(db, "scores", user.uid);
+            // Use Nickname as ID for Score Doc
+            const scoreRef = doc(db, "scores", nickname);
             await setDoc(scoreRef, {
-                uid: user.uid,
-                displayName: user.displayName || 'Guest',
+                uid: auth.currentUser?.uid || 'anon',
+                displayName: nickname,
                 score: finalScore,
                 timestamp: serverTimestamp()
             }, { merge: true });
@@ -220,31 +226,31 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             const data = gameData.current;
 
             if (!data.isGameClear && !data.isGameOver) {
-                data.frame++;
+                data.frame++; // Keep for animations
 
-                // Difficulty Scaling
-                // Speed increases every 500 frames, max 16
-                data.speed = Math.min(16, 8 + Math.floor(data.frame / 500));
-                // Spawn rate decreases (gets faster) every 300 frames, min 40
-                data.spawnRate = Math.max(40, 100 - Math.floor(data.frame / 300) * 10);
+                data.runTime += dt * 16; // ms
+
+                // Difficulty Scaling (Time-based now!)
+                // Increase speed every 5 seconds
+                const timeDifficulty = Math.floor(data.runTime / 5000);
+                data.speed = Math.min(22, 6 + (timeDifficulty * 1.5));
 
                 data.bgOffset += (data.speed * 0.5) * dt;
 
-                if (data.frame % 30 === 0) {
-                    if (scoreRef.current >= CLEAR_SCORE) {
-                        data.isGameClear = true;
-                        setGameState('CLEAR');
-                        checkAchievement('GAME_CLEAR');
-                        saveScore(scoreRef.current);
-                        addDiamonds(scoreRef.current);
-                        audioManager.playWin();
-                        createFirework(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-                        if (timerRef.current) clearInterval(timerRef.current);
-                    }
+                // Check Game Clear
+                if (scoreRef.current >= CLEAR_SCORE) {
+                    data.isGameClear = true;
+                    setGameState('CLEAR');
+                    checkAchievement('GAME_CLEAR');
+                    saveScore(scoreRef.current);
+                    addDiamonds(scoreRef.current);
+                    audioManager.playWin();
+                    createFirework(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+                    if (timerRef.current) clearInterval(timerRef.current);
                 }
 
                 // Physics
-                data.dino.dy += 0.8 * dt;
+                data.dino.dy += 1.5 * dt;
                 data.dino.y += data.dino.dy * dt;
                 if (data.dino.y + data.dino.h > CANVAS_HEIGHT - GROUND_HEIGHT) {
                     data.dino.y = CANVAS_HEIGHT - GROUND_HEIGHT - data.dino.h;
@@ -252,9 +258,19 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                     data.dino.grounded = true;
                 }
 
-                // Spawn
-                if (data.frame % data.spawnRate === 0) {
-                    const isItem = Math.random() > 0.4;
+                // Spawn Logic (Time-based) - Reduced spacing by ~25%
+                const minSpawnTime = 300; // was 400
+                const maxSpawnTime = 650; // was 900
+                // Use timeDifficulty for Spawn Rate too
+                const currentSpawnInterval = Math.max(minSpawnTime, maxSpawnTime - (timeDifficulty * 40));
+
+                data.spawnTimer -= (dt * 16);
+                if (data.spawnTimer <= 0) {
+                    data.spawnTimer = currentSpawnInterval;
+
+                    let isItem = Math.random() > 0.4;
+                    if (data.lastSpawnType === 'obstacle') isItem = true;
+
                     if (isItem) {
                         const items = ['🎟️', '🍔', '✈️', '💍', '💌'];
                         const item = items[Math.floor(Math.random() * items.length)];
@@ -263,14 +279,17 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                             y: CANVAS_HEIGHT - GROUND_HEIGHT - 60 - (Math.random() * 100),
                             w: 50, h: 50, type: item, vy: Math.sin(data.frame) * 0.5
                         });
+                        data.lastSpawnType = 'item';
                     } else {
-                        const obstacles = ['🚧', '🪨', '🔥'];
+                        // Use safer emojis for Windows compatibility
+                        const obstacles = ['🔥', '💣'];
                         const obs = obstacles[Math.floor(Math.random() * obstacles.length)];
                         data.obstacles.push({
                             x: CANVAS_WIDTH,
                             y: CANVAS_HEIGHT - GROUND_HEIGHT - 50,
                             w: 50, h: 50, type: obs
                         });
+                        data.lastSpawnType = 'obstacle';
                     }
                 }
 
@@ -299,9 +318,9 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         setScore(prev => {
                             const newScore = prev + 1;
                             scoreRef.current = newScore;
+                            checkAchievement('GAME_SCORE', newScore);
                             return newScore;
                         });
-
                         for (let i = 0; i < 5; i++) {
                             data.particles.push({
                                 x: item.x, y: item.y,
@@ -319,7 +338,7 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                         setGameState('GAME_OVER');
                         if (timerRef.current) clearInterval(timerRef.current);
                         saveScore(scoreRef.current);
-                        addDiamonds(scoreRef.current); // Earn Diamonds
+                        addDiamonds(scoreRef.current);
                     }
                 });
 
@@ -367,13 +386,16 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
             // Objects
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = '40px Silkscreen'; // Pixel Font
+            ctx.font = '40px "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
 
+            // Objects (Draw Text Directly)
             data.items.forEach(item => {
-                if (!item.collected) ctx.fillText(item.type, item.x + item.w / 2, item.y + item.h / 2);
+                if (!item.collected) {
+                    ctx.fillText(item.type, item.x + item.w / 2, item.y + item.h / 2 + 5);
+                }
             });
             data.obstacles.forEach(obs => {
-                ctx.fillText(obs.type, obs.x + obs.w / 2, obs.y + obs.h / 2);
+                ctx.fillText(obs.type, obs.x + obs.w / 2, obs.y + obs.h / 2 + 5);
             });
 
             // Player
@@ -386,11 +408,19 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
                 ctx.drawImage(sheet, frameIndex * frameW, 0, frameW, frameH, data.dino.x, data.dino.y + Y_OFFSET, data.dino.w, data.dino.h);
             }
 
-            // Particles
+            // Particles (Batch drawing by color to reduce state changes)
+            // Yellow
+            ctx.fillStyle = '#FFD700';
             data.particles.forEach(p => {
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, 4, 4); // Square particles
+                if (p.color === '#FFD700') ctx.fillRect(p.x, p.y, 4, 4);
             });
+            // White
+            ctx.fillStyle = '#FFFFFF';
+            data.particles.forEach(p => {
+                if (p.color === '#fff' || p.color === '#FFFFFF') ctx.fillRect(p.x, p.y, 4, 4);
+            });
+
+            // Fireworks
             data.fireworks.forEach(p => {
                 ctx.fillStyle = p.color;
                 ctx.fillRect(p.x, p.y, 3, 3);
@@ -411,7 +441,9 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
 
     }, [gameState, character, imagesLoaded]);
 
-    const handleAction = () => {
+    const handleAction = (e) => {
+        if (e && e.cancelable) e.preventDefault(); // Prevent scroll/zoom on touch
+
         if (gameState === 'START' || gameState === 'GAME_OVER' || gameState === 'CLEAR') {
             audioManager.playClick();
             resetGame();
@@ -431,15 +463,16 @@ const DinoGame = ({ selectedCharacter = 'groom' }) => {
     return (
         <div
             onClick={handleAction}
-            className="relative w-full aspect-[2/1] bg-sky-300 border-4 border-black overflow-hidden shadow-[8px_8px_0_rgba(0,0,0,0.5)] font-['Silkscreen'] select-none cursor-pointer"
+            onTouchStart={handleAction}
+            className="relative w-full aspect-[16/9] md:aspect-[2/1] bg-sky-300 border-4 border-black overflow-hidden shadow-[8px_8px_0_rgba(0,0,0,0.5)] font-['Silkscreen'] select-none cursor-pointer touch-none"
         >
-            <canvas ref={canvasRef} width={800} height={400} className="w-full h-full block" style={{ imageRendering: 'pixelated' }}></canvas>
+            <canvas ref={canvasRef} width={800} height={450} className="w-full h-full block" style={{ imageRendering: 'pixelated' }}></canvas>
 
             {gameState === 'START' && (
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white p-4 font-['Silkscreen']">
-                    <h2 className="text-4xl text-yellow-400 mb-4 animate-bounce drop-shadow-md font-['Silkscreen']">WEDDING RUN</h2>
-                    <p className="text-sm mb-8 animate-pulse text-gray-300">INSERT COIN TO START</p>
-                    <div className="border-4 border-white px-6 py-2 bg-blue-600 hover:bg-blue-500 blink">
+                    <h2 className="text-3xl md:text-4xl text-yellow-400 mb-4 animate-bounce drop-shadow-md font-['Silkscreen'] text-center">WEDDING RUN</h2>
+                    <p className="text-xs md:text-sm mb-8 animate-pulse text-gray-300">INSERT COIN TO START</p>
+                    <div className="border-4 border-white px-6 py-2 bg-blue-600 hover:bg-blue-500 blink text-sm md:text-base">
                         PRESS START
                     </div>
                 </div>

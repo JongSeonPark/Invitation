@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import mainHeroImg from '../assets/images/main-hero.jpg';
 
 const Hero = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -13,7 +14,7 @@ const Hero = () => {
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-black/20 z-10"></div>
                 <img
-                    src="https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+                    src={mainHeroImg}
                     alt="Wedding Background"
                     className="w-full h-full object-cover"
                 />

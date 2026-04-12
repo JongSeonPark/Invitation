@@ -6,12 +6,12 @@ const VideoPlayer = () => {
 
             <div className="relative z-10 w-full max-w-6xl mx-auto">
                 <h2 className="text-3xl md:text-4xl text-primary font-classic font-bold mb-12 text-center animate-fade-in-up">
-                    식전 영상
+                    두 사람의 이야기
                 </h2>
                 <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-soft-xl border border-white/50 bg-black/5 animate-fade-in-up delay-100">
                     <iframe
                         className="w-full h-full"
-                        src="https://www.youtube-nocookie.com/embed/2Vv-BfVoq4g"
+                        src="https://www.youtube-nocookie.com/embed/AreIxgzHcIQ"
                         title="Wedding Video"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

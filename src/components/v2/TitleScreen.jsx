@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../firebase';
 import { signInAnonymously, onAuthStateChanged, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { checkAchievement } from '../../utils/achievementManager';
+import { doc, setDoc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
+import { checkAchievement, syncAchievements } from '../../utils/achievementManager';
 
 const TitleScreen = ({ onStart, onSwitchToV1 }) => {
     const [animate, setAnimate] = useState(false);
@@ -48,36 +48,70 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                 let currentUser = auth.currentUser;
 
                 if (!currentUser) {
-                    // Sign In Anonymously if not logged in
+                    // Sign In Anonymously (Just for connection)
                     const result = await signInAnonymously(auth);
                     currentUser = result.user;
                 }
 
-                // 2. Update Profile with Nickname
-                await updateProfile(currentUser, {
-                    displayName: nickname
-                });
+                // 2. Use Nickname as the Primary Key
+                const safeNickname = nickname.trim();
+                localStorage.setItem('wedding_nickname', safeNickname); // Save globally
 
-                // 3. Ensure Firestore Document Exists
-                const userRef = doc(db, "users", currentUser.uid);
+                // 3. Check Firestore (users/{nickname})
+                const userRef = doc(db, "users", safeNickname);
                 const userSnap = await getDoc(userRef);
 
-                if (!userSnap.exists()) {
-                    await setDoc(userRef, {
-                        nickname: nickname,
+                let userData = userSnap.exists() ? userSnap.data() : null;
+                const isNewUser = !userData;
+
+                if (isNewUser) {
+                    // Create New User Data
+                    const initialData = {
+                        nickname: safeNickname,
                         achievements: [],
-                        createdAt: new Date()
-                    });
+                        collection: [],
+                        diamonds: 0,
+                        createdAt: new Date(),
+                        lastLogin: new Date()
+                    };
+
+                    await setDoc(userRef, initialData);
+
+                    // Clear local storage to avoid conflicts
+                    localStorage.removeItem('wedding_collection_v2');
+                    localStorage.removeItem('my_achievements');
+
+                    userData = initialData; // Local reference
                 } else {
-                    // Update nickname if changed
-                    await setDoc(userRef, { nickname: nickname }, { merge: true });
+                    // Update Last Login
+                    await setDoc(userRef, { lastLogin: new Date() }, { merge: true });
+                }
+
+                // 4. SYNC DATA (Firestore -> LocalStorage)
+                // This ensures "Same Nickname = Same Data" on any device
+                if (userData) {
+                    // Sync Achievements to Memory & LocalStorage
+                    const ach = userData.achievements || [];
+                    syncAchievements(ach);
+
+                    // Sync Collection
+                    const col = userData.collection || [];
+                    localStorage.setItem('wedding_collection_v2', JSON.stringify(col));
+
+                    // Check Collection Achievement on Login (in case unlocked elsewhere)
+                    checkAchievement('CHECK_COLLECTION', col);
+
+                    window.dispatchEvent(new Event('collectionUpdated'));
+
+                    // Note: Diamonds are mostly read directly from DB in components, 
+                    // or via listeners, so no strict need to sync to LS unless for offline fallback.
                 }
 
                 // Achievement: FIRST_STEP
                 checkAchievement('LOGIN');
 
                 // Proceed to Game
-                onStart();
+                onStart(isNewUser);
 
             } catch (error) {
                 console.error("Login Failed", error);
@@ -110,7 +144,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
 
                     {/* Title */}
                     <div className="mb-10 animate-pulse">
-                        <p className="text-yellow-400 text-sm tracking-[0.2em] mb-2 uppercase shine">Join the Quest</p>
+                        <p className="text-yellow-400 text-sm tracking-[0.2em] mb-2 uppercase shine">결혼식 퀘스트에 참여하세요</p>
                         <h1 className="text-5xl md:text-7xl text-white drop-shadow-[4px_4px_0_rgba(0,0,0,1)] leading-tight font-pixel">
                             WEDDING<br />QUEST
                         </h1>
@@ -122,7 +156,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                             <>
                                 <input
                                     type="text"
-                                    placeholder="PLAYER NAME"
+                                    placeholder="이름 (닉네임)"
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
                                     className="w-full bg-black/50 border-4 border-white text-white p-4 text-center text-xl placeholder:text-gray-500 focus:bg-black/70 focus:outline-none focus:border-yellow-400 transition-colors uppercase font-pixel"
@@ -135,7 +169,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                                     onClick={handleLogin}
                                     className="w-full bg-blue-600 border-b-4 border-r-4 border-blue-800 text-white p-4 text-xl hover:bg-blue-500 hover:translate-y-1 hover:border-b-0 hover:border-r-0 active:translate-y-2 transition-all group relative overflow-hidden"
                                 >
-                                    <span className="relative z-10">INSERT COIN (START)</span>
+                                    <span className="relative z-10">게임 시작 (START)</span>
                                 </button>
                             </>
                         ) : (
@@ -152,7 +186,7 @@ const TitleScreen = ({ onStart, onSwitchToV1 }) => {
                         onClick={onSwitchToV1}
                         className="mt-8 text-xs text-white/50 hover:text-white underline decoration-dashed underline-offset-4"
                     >
-                        [ BACK TO CLASSIC_OS ]
+                        [ 클래식 청첩장으로 돌아가기 ]
                     </button>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 {
   "name": "wedding-invitation",
   "private": true,
+  "homepage": "https://JongSeonPark.github.io/Invitation/",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

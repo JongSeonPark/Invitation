@@ -2,10 +2,21 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { audioManager } from '../../utils/audioManager';
 import { spendDiamonds } from '../../utils/currencyManager';
+import { auth, db } from '../../firebase';
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 
-// Import images exactly like Gallery.jsx
-const imageModules = import.meta.glob('../../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
-const images = Object.values(imageModules).map(module => module.default);
+// Import image loader
+import { loadWeddingImages as loadImages } from '../../utils/imageLoader';
+import { checkAchievement } from '../../utils/achievementManager';
+
+const images = loadImages();
+
+// Probability Settings
+const GACHA_PROBABILITY = {
+    SSR: 0.1, // 10%
+    SR: 0.3,  // 30%
+    R: 0.6    // 60%
+};
 
 const Recruit = () => {
     const [results, setResults] = useState([]); // Array of { image, rarity }
@@ -31,20 +42,45 @@ const Recruit = () => {
             const newResults = [];
 
             for (let i = 0; i < count; i++) {
-                const randomIndex = Math.floor(Math.random() * images.length);
-                const selectedImage = images[randomIndex];
+                // 1. Determine Rarity
+                const rand = Math.random();
+                let targetRarity = 'R';
+                if (rand < GACHA_PROBABILITY.SSR) targetRarity = 'SSR';
+                else if (rand < GACHA_PROBABILITY.SSR + GACHA_PROBABILITY.SR) targetRarity = 'SR';
 
-                // Save to Collection
-                const savedCollection = JSON.parse(localStorage.getItem('wedding_collection') || '[]');
-                if (!savedCollection.includes(randomIndex)) {
-                    savedCollection.push(randomIndex);
-                    localStorage.setItem('wedding_collection', JSON.stringify(savedCollection));
+                // 2. Filter available images for this rarity
+                let pool = images.filter(img => img.rarity === targetRarity);
+
+                // Fallback (if pool is empty, downgrade)
+                if (pool.length === 0) {
+                    targetRarity = 'SR';
+                    pool = images.filter(img => img.rarity === targetRarity);
+                }
+                if (pool.length === 0) {
+                    targetRarity = 'R';
+                    pool = images.filter(img => img.rarity === targetRarity);
+                }
+                // If still empty (no images at all), skip or handle error. 
+                // Assuming R has images.
+
+                const randomImage = pool[Math.floor(Math.random() * pool.length)];
+
+                // Save to Collection (by Path)
+                const savedCollection = JSON.parse(localStorage.getItem('wedding_collection_v2') || '[]');
+                if (!savedCollection.includes(randomImage.path)) {
+                    savedCollection.push(randomImage.path);
+                    localStorage.setItem('wedding_collection_v2', JSON.stringify(savedCollection));
+                    // Check Collection Achievement
+                    checkAchievement('CHECK_COLLECTION', savedCollection);
                 }
 
-                // Mock Rarity
-                const rand = Math.random();
-                const rarity = rand > 0.8 ? 'SSR' : rand > 0.5 ? 'SR' : 'R';
-                newResults.push({ image: selectedImage, rarity });
+                // Push result
+                newResults.push({
+                    image: randomImage.src,
+                    originalPath: randomImage.path,
+                    rarity: targetRarity === 'SSR' ? 'SSR/최고' : targetRarity === 'SR' ? 'SR/희귀' : 'R/보통',
+                    originalRarity: targetRarity
+                });
             }
 
             // Trigger collection update event once if new items found
@@ -53,6 +89,23 @@ const Recruit = () => {
             setResults(newResults);
             setIsAnimating(false);
             audioManager.playConfirm();
+
+            // Save to Firestore (Background)
+            const nickname = localStorage.getItem('wedding_nickname');
+            if (nickname && newResults.length > 0) {
+                const userRef = doc(db, "users", nickname);
+                const newPaths = newResults.map(r => r.image.split('assets/')[1] ? `assets/${r.image.split('assets/')[1]}` : r.image);
+
+                // We store relative paths or identifiers. 
+                // Currently logic uses full path or relative. Let's stick to what was in localStorage:
+                // localStorage logic used: randomImage.path
+
+                const pathsToSave = newResults.map(r => r.originalPath);
+
+                updateDoc(userRef, {
+                    collection: arrayUnion(...pathsToSave)
+                }).catch(err => console.error("Error saving collection to Firestore:", err));
+            }
         }, 2000);
     };
 
@@ -65,8 +118,8 @@ const Recruit = () => {
             {results.length === 0 && !isAnimating && (
                 <div className="z-10 flex flex-col items-center w-full max-w-sm animate-in zoom-in duration-500 font-['Silkscreen']">
                     <div className="mb-4 text-center bg-black/60 backdrop-blur-md border-[6px] border-white px-8 py-6 rounded-2xl shadow-[8px_8px_0_rgba(0,0,0,0.5)]">
-                        <h2 className="text-3xl text-yellow-400 mb-2 drop-shadow-md tracking-wider font-['Silkscreen']">LUCKY DRAW</h2>
-                        <p className="text-white text-sm">SPEND DIAMONDS TO COLLECT MEMORIES!</p>
+                        <h2 className="text-3xl text-yellow-400 mb-2 drop-shadow-md tracking-wider font-['Silkscreen']">WEDDING PHOTO</h2>
+                        <p className="text-white text-sm">다이아몬드를 사용해 추억을 모아보세요!</p>
                     </div>
 
                     <div className="relative group cursor-pointer mb-8 animate-float">
@@ -84,7 +137,7 @@ const Recruit = () => {
                             onClick={() => handleRecruit(1)}
                             className="flex-1 bg-blue-600 border-4 border-white text-white py-4 rounded-xl shadow-[4px_4px_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_black] active:translate-y-2 active:shadow-none transition-all flex flex-col items-center gap-1"
                         >
-                            <span className="text-xl font-bold">1 DRAW</span>
+                            <span className="text-xl font-bold">1회 뽑기</span>
                             <div className="bg-black/30 px-3 py-1 rounded-full text-xs flex items-center gap-1">
                                 💎 1
                             </div>
@@ -95,7 +148,7 @@ const Recruit = () => {
                             onClick={() => handleRecruit(10)}
                             className="flex-1 bg-yellow-500 border-4 border-white text-white py-4 rounded-xl shadow-[4px_4px_0_black] hover:translate-y-1 hover:shadow-[2px_2px_0_black] active:translate-y-2 active:shadow-none transition-all flex flex-col items-center gap-1"
                         >
-                            <span className="text-xl font-bold text-black drop-shadow-md">10 DRAW</span>
+                            <span className="text-xl font-bold text-black drop-shadow-md">10회 뽑기</span>
                             <div className="bg-black/30 px-3 py-1 rounded-full text-xs flex items-center gap-1 text-white">
                                 💎 10
                             </div>
@@ -111,7 +164,7 @@ const Recruit = () => {
                         🔮
                     </div>
                     <p className="text-3xl text-white animate-pulse drop-shadow-[4px_4px_0_black]">
-                        SUMMONING...
+                        소환 중...
                     </p>
                 </div>
             )}
@@ -127,7 +180,7 @@ const Recruit = () => {
 
                         {/* Header */}
                         <h2 className="text-4xl text-yellow-400 mb-8 drop-shadow-[0_4px_0_black] animate-bounce text-center">
-                            {results.length > 1 ? '🎉 10x SUMMON RESULT 🎉' : '✨ NEW MEMORY ✨'}
+                            {results.length > 1 ? '🎉 10회 소환 결과 🎉' : '✨ 새로운 추억 발견 ✨'}
                         </h2>
 
                         {/* Grid for 10x, Single for 1x */}
@@ -160,7 +213,7 @@ const Recruit = () => {
 
                                     {results.length === 1 && (
                                         <div className="mt-4 text-xl text-black font-bold tracking-widest uppercase text-center">
-                                            {item.rarity === 'SSR' ? 'UNFORGETTABLE' : 'LOVELY DAY'}
+                                            {item.rarity === 'SSR' ? '잊지 못할 순간' : '사랑스러운 날'}
                                         </div>
                                     )}
                                 </div>
@@ -173,13 +226,13 @@ const Recruit = () => {
                                 onClick={() => setResults([])}
                                 className="px-8 py-3 bg-gray-600 text-white border-4 border-white hover:bg-gray-500 active:scale-95 transition-all shadow-[4px_4px_0_black]"
                             >
-                                CLOSE
+                                닫기
                             </button>
                             <button
                                 onClick={() => handleRecruit(results.length)}
                                 className="px-8 py-3 bg-blue-600 text-white border-4 border-white hover:bg-blue-500 active:scale-95 transition-all shadow-[4px_4px_0_black] flex items-center gap-2"
                             >
-                                <span>💎</span> AGAIN ({results.length})
+                                <span>💎</span> 다시하기 ({results.length}회)
                             </button>
                         </div>
                     </div>

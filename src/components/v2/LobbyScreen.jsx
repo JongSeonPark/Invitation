@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import groomImg from '../../assets/card_images/groom_nobg.png';
 import brideImg from '../../assets/card_images/bride_nobg.png';
 import { subscribeToDiamonds } from '../../utils/currencyManager';
+import { auth, db } from '../../firebase';
+import { doc, updateDoc } from "firebase/firestore";
 
 // Pixel Theme Lobby
 
@@ -18,8 +20,9 @@ import { checkAchievement } from '../../utils/achievementManager';
 import RankingBoard from '../RankingBoard';
 import AchievementBoard from '../AchievementBoard';
 import BouquetGame from './BouquetGame';
+import AchievementPopup from '../AchievementPopup';
 
-const LobbyScreen = ({ onSwitchToV1 }) => {
+const LobbyScreen = ({ onSwitchToV1, isNewUser }) => {
     const [character, setCharacter] = useState('bride');
     const [showBubble, setShowBubble] = useState(false);
     const [bubbleText, setBubbleText] = useState('');
@@ -50,6 +53,15 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
         };
     }, []);
 
+    // Auto-open Story for new users
+    useEffect(() => {
+        if (isNewUser) {
+            setTimeout(() => {
+                toggleModal('story');
+            }, 1000); // Slight delay for effect
+        }
+    }, [isNewUser]);
+
     const toggleCharacter = () => {
         audioManager.playClick();
         setCharacter(prev => prev === 'bride' ? 'groom' : 'bride');
@@ -77,7 +89,27 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
         const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
         setBubbleText(randomQuote);
         setShowBubble(true);
-        checkAchievement('TOUCH_CHARACTER', { [character]: 1 }); // Simple trigger
+
+        // Track Touches for Achievement (Wedding Crasher)
+        const storageKey = 'wedding_touch_counts';
+        let counts = { groom: 0, bride: 0 };
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Ensure keys exist and are numbers
+                counts.groom = Number(parsed.groom) || 0;
+                counts.bride = Number(parsed.bride) || 0;
+            }
+        } catch (e) { console.error(e); }
+
+        // Increment
+        counts[character] = (counts[character] || 0) + 1;
+        localStorage.setItem(storageKey, JSON.stringify(counts));
+
+        // Check Achievement with TOTAL counts
+        checkAchievement('TOUCH_CHARACTER', counts);
+
         setTimeout(() => setShowBubble(false), 3000);
     };
 
@@ -88,6 +120,16 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
     const closeModal = () => {
         audioManager.playClick();
+
+        // If closing Story modal, mark as seen in Firestore - REMOVED per user request
+        // if (activeModal === 'story') {
+        //     const user = auth.currentUser;
+        //     if (user) {
+        //         const userRef = doc(db, "users", user.uid);
+        //         updateDoc(userRef, { storySeen: true }).catch(e => console.error(e));
+        //     }
+        // }
+
         setActiveModal(null);
     };
 
@@ -98,15 +140,15 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
     const getModalTitle = (modal) => {
         switch (modal) {
-            case 'map': return 'WORLD MAP';
-            case 'gallery': return 'GALLERY';
-            case 'recruit': return 'GUEST BOOK';
-            case 'story': return 'PROLOGUE';
-            case 'ranking': return 'RANKING';
-            case 'achievement': return 'TROPHIES';
-            case 'info': return 'PLAYER INFO';
-            case 'game': return 'MINI GAME';
-            case 'bouquet': return 'BOUQUET TOSS';
+            case 'map': return '오시는 길';
+            case 'gallery': return '웨딩 앨범';
+            case 'recruit': return '행운의 사진 뽑기';
+            case 'story': return '초대글';
+            case 'ranking': return '랭킹';
+            case 'achievement': return '업적';
+            case 'info': return '플레이어 정보';
+            case 'game': return '신랑 입장';
+            case 'bouquet': return '부케 던지기';
             default: return '';
         }
     }
@@ -116,6 +158,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-black font-pixel select-none text-white">
+            <AchievementPopup />
 
             {/* Background Layer */}
             <div className="absolute inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})`, imageRendering: 'pixelated' }}>
@@ -142,13 +185,13 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                         onClick={toggleCharacter}
                         className="bg-blue-600 border-b-4 border-r-4 border-blue-800 text-white px-3 py-1 text-xs hover:bg-blue-500 active:border-b-0 active:border-r-0 active:translate-y-1 transition-all"
                     >
-                        SWITCH CHAR
+                        캐릭터 변경
                     </button>
                     <button
                         onClick={handleSwitchToV1}
                         className="text-white/60 text-[10px] hover:text-white hover:underline bg-black/40 px-2 py-1"
                     >
-                        [ CLASSIC MODE ]
+                        [ 클래식 청첩장 ]
                     </button>
                 </div>
             </div>
@@ -179,11 +222,12 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
 
             {/* Right Menu - Retro Buttons */}
             <div className="absolute top-1/2 right-4 -translate-y-1/2 flex flex-col gap-3 pointer-events-auto z-40">
-                <MenuButton icon="🗺️" label="MAP" onClick={() => toggleModal('map')} />
-                <MenuButton icon="📷" label="ALBUM" onClick={() => toggleModal('gallery')} />
-                <MenuButton icon="📖" label="STORY" onClick={() => toggleModal('story')} />
-                <MenuButton icon="🏆" label="RANK" onClick={() => toggleModal('ranking')} />
-                <MenuButton icon="💌" label="뽑기" onClick={() => toggleModal('recruit')} />
+                <MenuButton icon="🗺️" label="오시는 길" onClick={() => toggleModal('map')} />
+                <MenuButton icon="📷" label="웨딩 앨범" onClick={() => toggleModal('gallery')} />
+                <MenuButton icon="🔮" label="사진 뽑기" onClick={() => toggleModal('recruit')} />
+                <MenuButton icon="📖" label="초대글" onClick={() => toggleModal('story')} />
+                <MenuButton icon="🏆" label="랭킹" onClick={() => toggleModal('ranking')} />
+                <MenuButton icon="🎖️" label="업적" onClick={() => toggleModal('achievement')} />
             </div>
 
             {/* Bottom Controls - Dual Game Buttons */}
@@ -199,8 +243,8 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                     <div className="flex items-center gap-3">
                         <span className="text-2xl animate-pulse">🎮</span>
                         <div className="flex flex-col items-start leading-none">
-                            <span className="text-[10px] text-yellow-300">INSERT COIN</span>
-                            <span className="text-lg">BATTLE RUN</span>
+                            <span className="text-[10px] text-yellow-300">게임 시작</span>
+                            <span className="text-lg">신랑 입장</span>
                         </div>
                     </div>
                 </button>
@@ -213,8 +257,8 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
                     <div className="flex items-center gap-3">
                         <span className="text-2xl animate-bounce">💐</span>
                         <div className="flex flex-col items-start leading-none">
-                            <span className="text-[10px] text-yellow-200">CATCH IT!</span>
-                            <span className="text-lg">BOUQUET</span>
+                            <span className="text-[10px] text-yellow-200">나이스 캐치</span>
+                            <span className="text-lg">부케 받기</span>
                         </div>
                     </div>
                 </button>
@@ -224,7 +268,7 @@ const LobbyScreen = ({ onSwitchToV1 }) => {
             {activeModal && (
                 <GameModal title={getModalTitle(activeModal)} onClose={closeModal}>
                     {activeModal === 'map' && <Location />}
-                    {activeModal === 'gallery' && <Gallery />}
+                    {activeModal === 'gallery' && <Gallery showRarity={true} />}
                     {activeModal === 'info' && <CoupleCards />}
                     {activeModal === 'game' && (
                         <div className="flex flex-col items-center justify-center py-4 w-full">
