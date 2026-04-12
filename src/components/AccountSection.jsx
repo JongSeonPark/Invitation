@@ -9,7 +9,8 @@ const AccountSection = () => {
             label: '신랑측 마음 전하실 곳',
             description: '따뜻한 마음 감사히 받겠습니다.',
             accounts: [
-                { relation: '아버지', name: '박태만', bank: '국민은행', account: '383602-04-101-383' },
+                { relation: '아버지', name: '박태만', bank: '국민은행', account: '383602-04-101383' },
+                { relation: '어머니', name: '권덕례', bank: '국민은행', account: '383602-04-101383', note: '아버지 계좌와 동일' },
                 { relation: '신랑', name: '박종선', bank: '하나은행', account: '495-910449-55107' },
             ]
         },
@@ -18,6 +19,7 @@ const AccountSection = () => {
             label: '신부측 마음 전하실 곳',
             description: '축하의 마음 감사히 받겠습니다.',
             accounts: [
+                { relation: '아버지', name: '윤상식', bank: '국민은행', account: '206002-04-432922' },
                 { relation: '어머니', name: '강미선', bank: '신한은행', account: '110-106-343360' },
                 { relation: '신부', name: '윤지수', bank: '신한은행', account: '110-297-915880' },
             ]
@@ -25,9 +27,9 @@ const AccountSection = () => {
     ];
 
     const handleCopy = (acc) => {
-        const textToCopy = `${acc.bank} ${acc.account}`;
+        const textToCopy = acc.copyText || `${acc.bank} ${acc.account}`;
         navigator.clipboard.writeText(textToCopy).then(() => {
-            setCopied(acc.account); // Use account number as unique key for copied state
+            setCopied(acc.name); // Use name as unique key for copied state
             setTimeout(() => setCopied(null), 2000);
         });
     };
@@ -65,17 +67,24 @@ const AccountSection = () => {
                                                 onClick={() => handleCopy(acc)}
                                                 className={`
                                                     px-3 py-1 rounded-full text-xs font-medium transition-all duration-300
-                                                    ${copied === acc.account
+                                                    ${copied === acc.name
                                                         ? 'bg-[#03C75A] text-white shadow-sm'
                                                         : 'bg-white border border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
                                                     }
                                                 `}
                                             >
-                                                {copied === acc.account ? '복사완료' : '복사하기'}
+                                                {copied === acc.name ? '복사완료' : '복사하기'}
                                             </button>
                                         </div>
-                                        <div className="text-xs sm:text-sm text-gray-600 font-mono w-full text-left pl-0 sm:pl-14 transition-all">
-                                            {acc.bank} <span className="mx-1 text-gray-300">|</span> {acc.account}
+                                        <div className="flex flex-col gap-1 w-full pl-0 sm:pl-14">
+                                            <div className="text-xs sm:text-sm text-gray-600 font-mono text-left transition-all">
+                                                {acc.bank && <>{acc.bank} <span className="mx-1 text-gray-300">|</span> </>}{acc.account}
+                                            </div>
+                                            {acc.note && (
+                                                <div className="text-[11px] sm:text-xs text-gray-400/80 text-left -mt-1 font-sans">
+                                                    * {acc.note}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
